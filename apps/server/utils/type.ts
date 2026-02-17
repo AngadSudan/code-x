@@ -3,11 +3,11 @@ export interface JwtPayload {
   type: "ORGANIZATION" | "INTERVIEWER" | "USER";
 }
 export interface CreateInterviewerBody {
-  name: string;
-  email: string;
-  username: string;
-  orgId: string;
-  password: string;
+  name: string,
+  email: string,
+  username: string,
+  organizationId: string,
+  password: string,
 }
 export interface UpdateInterviewerBody {
   name?: string;

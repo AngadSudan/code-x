@@ -4,10 +4,10 @@ import prismaClient from "../utils/prisma";
 import { comparePassword, hashPassword } from "../utils/password";
 import apiResponse from "../utils/apiResponse";
 import { handleSendMail, handleSendOTPMail, handleVerifyOTP } from "../utils/nodemailer/mailHandler";
-import { verifyResetToken } from "../utils/resetToken";
+import { generateResetToken, verifyResetToken } from "../utils/resetToken";
 import { generateFreshTokens } from "../utils/jwt";
 import { generatePassword } from "../utils/nodemailer/GeneratePass";
-import { password } from "bun";
+
 class AuthController {
     async OrganizationRegister(req: Request, res: Response) {
         try {
@@ -51,7 +51,7 @@ class AuthController {
 
             const tokens = generateFreshTokens({
                 id: organization.id,
-                type: "organization",
+                type: "ORGANIZATION",
             });
 
             const dborganization = await prismaClient.organization.findUnique({
@@ -88,7 +88,7 @@ class AuthController {
                     email: data.email,
                     username: data.username,
                     password: hashedPassword,
-                    createdBy: req.user.id,
+                    organizationId: req.user.id,
                 }
             });
             const email = data.email;
@@ -118,7 +118,7 @@ class AuthController {
 
             const tokens = generateFreshTokens({
                 id: interviewer.id,
-                type: "interviewer",
+                type: "INTERVIEWER",
             });
 
             const dbinterviewer = await prismaClient.interviewer.findUnique({
@@ -179,7 +179,7 @@ class AuthController {
 
             const tokens = generateFreshTokens({
                 id: user.id,
-                type: "user",
+                type: "USER",
             });
 
             const dbuser = await prismaClient.user.findUnique({
@@ -220,8 +220,9 @@ class AuthController {
              */
             const { email, otp } = req.body;
             const isCorrect = handleVerifyOTP(email, otp);
+            const resetToken = generateResetToken(email);
             if (!isCorrect) throw new Error("otp is not verified");
-            res.status(200).json(apiResponse(200, "OTP verified sucessfully", null));
+            res.status(200).json(apiResponse(200, "OTP verified sucessfully", resetToken));
         } catch (error: any) {
             console.log(error);
             res.status(500).json(apiResponse(500, error.message, error));
@@ -230,10 +231,9 @@ class AuthController {
 
     async resetPassword(req: Request, res: Response) {
         try {
-            const { newPassword } = req.body;
-            const resetToken = req.cookies.reset_token;
-
+            const { resetToken, newPassword } = req.body;
             if (!resetToken) {
+
                 return res
                     .status(401)
                     .json(apiResponse(401, "Reset token missing or expired", null));
@@ -244,7 +244,6 @@ class AuthController {
                     .json(apiResponse(400, "new password is required", null));
             }
 
-            // 🔐 Verify reset token
             const payload = verifyResetToken(resetToken);
 
             if (payload.purpose !== "PASSWORD_RESET") {
@@ -278,7 +277,6 @@ class AuthController {
 
             const hashed = await hashPassword(newPassword);
 
-            // 🔄 Update password
             if (userType === "INTERVIEWER") {
                 await prismaClient.interviewer.update({
                     where: { id: dbUser.id },
@@ -300,7 +298,6 @@ class AuthController {
                 id: dbUser.id,
                 type: userType,
             });
-            res.clearCookie("reset_token");
 
             return res
                 .status(200)
