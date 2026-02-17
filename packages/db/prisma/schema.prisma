@@ -106,6 +106,7 @@ model User {
   projects                 Projects[]
   projectTags              ProjectTags[]
   interviewers             Interviewer[]
+  userExperiences          UserExperience[]
 
   @@index([username, email])
 }
@@ -115,10 +116,12 @@ model UserExperience {
   companyName          String
   jobTitle             String
   jobDescription       String
-  offerLetter          String
-  completionCertifiate String
+  offerLetter          String?
+  completionCertifiate String?
   startDate            DateTime
   endDate              DateTime?
+  userId               String       @db.ObjectId
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   isOngoing            JOB_TIMELINE @default(ONGOING)
   jobType              JOB_TYPE     @default(OFFLINE)
   createdAt            DateTime     @default(now())

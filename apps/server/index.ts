@@ -14,7 +14,9 @@ import morgan from "morgan";
 import dotenv from "dotenv";
 import cacheClient from "./utils/redis";
 import { authRouter } from "./routes";
-import type { JwtPayload } from "jsonwebtoken";
+import type { JwtPayload } from "./utils/type";
+import userRouter from "./routes/user.route";
+import organizationRouter from "./routes/organization.route";
 
 dotenv.config({ path: "../.env" });
 
@@ -85,6 +87,8 @@ declare global {
   }
 }
 // routes
+app.use("/api/v1/users",userRouter);
+app.use("/api/v1/organizations",organizationRouter);
 
 const errorHandler = (
   error: any,
@@ -143,15 +147,15 @@ app.use((req, res) => {
 });
 
 cacheClient.createClient();
-cacheClient
-  .connectToClient()
-  .then(() => {
-    console.log("cache layer initialized");
-  })
-  .catch((err) => {
-    console.log(err);
-    console.log("Cache layer initialization failiure");
-  });
+// cacheClient
+//   .connectToClient()
+//   .then(() => {
+//     console.log("cache layer initialized");
+//   })
+//   .catch((err) => {
+//     console.log(err);
+//     console.log("Cache layer initialization failiure");
+//   });
 app.listen(process.env.PORT || 8000, () => {
   console.log({
     message: "application started on port 8000",
