@@ -48,3 +48,10 @@ export interface SuiteCreation {
   endDate: Date;
   publishStatus: "NOT_PUBLISHED" | "PUBLISHED";
 }
+
+export interface SuiteRound {
+  name: string;
+  description: string;
+  roundType: "DSA" | "LIVE_PROJECT" | "HR" | "OTHER";
+  duration: string;
+}
