@@ -1,58 +1,67 @@
 import type { Request, Response } from "express";
 import apiResponse from "../utils/apiResponse";
 import prismaClient from "../utils/prisma";
-
-import type {
-  projectPayload,
-  projectTagsPayload,
-  projectMediaPayload,
-} from "../utils/type";
-
-// Data Validation baad mein.
-//          - Aadarsh Verma, 16 February 2026, 08:04 PM
+import type { projectPayload } from "../utils/type";
 
 class ProjectController {
   async createProject(req: Request<{}, {}, projectPayload>, res: Response) {
     try {
-      const data: projectPayload = req.body;
+      const data = req.body;
       const userId = req.user?.id;
 
       if (!userId) {
         return res.status(401).json(apiResponse(401, "Unauthorized", null));
       }
 
-      const file = req.file;
-      // TODO: upload file to cloudinary
+      const title = data.title?.trim();
+      const description = data.description?.trim();
+      const projectUrl = data.projectUrl?.trim();
+      const repositoryUrl = data.repositoryUrl?.trim();
+
+      if (!title || !description) {
+        return res
+          .status(400)
+          .json(apiResponse(400, "Title and description are required", null));
+      }
+
+      const skills = data.skills?.map((skill) => skill.trim());
+
+      // TODO: Upload file to cloudinary.
       let coverImageUrl = "";
+
       const newProject = await prismaClient.projects.create({
         data: {
-          title: data.title,
-          description: data.description,
-          projectUrl: data.projectUrl,
+          title,
+          description,
+          projectUrl,
           coverImage: coverImageUrl,
-          repositoryUrl: data.repositoryUrl,
+          repositoryUrl,
           startDate: data.startDate ? new Date(data.startDate) : new Date(),
           endDate: data.endDate ? new Date(data.endDate) : new Date(),
           isOngoing: data.isOngoing,
           visibility: data.visibility,
           publishStatus: data.publishStatus,
-          publishTime: data.publishTime,
-          skills: data.skills,
+          publishTime: data.publishTime
+            ? new Date(data.publishTime)
+            : new Date(),
+          skills,
           ownerId: userId,
         },
       });
 
-      return res.status(200).json(apiResponse(201, "Project Created!!", null));
+      return res
+        .status(201)
+        .json(apiResponse(201, "Project Created!!", newProject));
     } catch (error: any) {
       console.log(error);
-      return res.status(200).json(apiResponse(500, error.message, null));
+      return res.status(500).json(apiResponse(500, error.message, null));
     }
   }
 
-  async updateProject(req: Request<{ id: string }>, res: Response) {
+  async updateProject(req: Request<{ id: string }, {}, projectPayload>, res: Response,) {
     try {
-      const { id } = req.params;
-      const data: projectPayload = req.body;
+      const id = req.params.id.trim();
+      const data = req.body;
       const userId = req.user?.id;
 
       if (!userId) {
@@ -76,10 +85,11 @@ class ProjectController {
       const updatedProject = await prismaClient.projects.update({
         where: { id },
         data: {
-          title: data.title ?? existingProject.title,
-          description: data.description ?? existingProject.description,
-          projectUrl: data.projectUrl ?? existingProject.projectUrl,
-          repositoryUrl: data.repositoryUrl ?? existingProject.repositoryUrl,
+          title: data.title?.trim() ?? existingProject.title,
+          description: data.description?.trim() ?? existingProject.description,
+          projectUrl: data.projectUrl?.trim() ?? existingProject.projectUrl,
+          repositoryUrl:
+            data.repositoryUrl?.trim() ?? existingProject.repositoryUrl,
           startDate: data.startDate
             ? new Date(data.startDate)
             : existingProject.startDate,
@@ -92,7 +102,9 @@ class ProjectController {
           publishTime: data.publishTime
             ? new Date(data.publishTime)
             : existingProject.publishTime,
-          skills: data.skills ?? existingProject.skills,
+          skills: data.skills
+            ? data.skills.map((s) => s.trim())
+            : existingProject.skills,
         },
       });
 
@@ -107,7 +119,7 @@ class ProjectController {
 
   async deleteProject(req: Request<{ id: string }>, res: Response) {
     try {
-      const { id } = req.params;
+      const id = req.params.id.trim();
       const userId = req.user?.id;
 
       if (!userId) {
@@ -116,6 +128,7 @@ class ProjectController {
 
       const project = await prismaClient.projects.findUnique({
         where: { id },
+        include: { projectMedias: true, tags: true },
       });
 
       if (!project) {
@@ -143,7 +156,7 @@ class ProjectController {
 
   async getProjectById(req: Request<{ id: string }>, res: Response) {
     try {
-      const { id } = req.params;
+      const id = req.params.id.trim();
 
       const project = await prismaClient.projects.findUnique({
         where: { id },
