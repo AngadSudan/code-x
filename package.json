@@ -20,5 +20,9 @@
   "workspaces": [
     "apps/*",
     "packages/*"
-  ]
+  ],
+  "dependencies": {
+    "lucide-react": "^0.575.0",
+    "react-hook-form": "^7.71.1"
+  }
 }

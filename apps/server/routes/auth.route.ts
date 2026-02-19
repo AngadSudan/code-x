@@ -2,7 +2,7 @@ import { Router } from "express";
 import authController from "../controller/auth.controller";
 import { authMiddleware } from "../middleware/auth.middleware";
 const authRouter = Router();
-authRouter.post("/register/interviewer", authMiddleware, authController.CreateInterviewer);
+authRouter.post("/register/interviewer", authController.CreateInterviewer);
 authRouter.post("/login/interviewer", authController.InterviewerLogin);
 authRouter.post("/register/user", authController.UserRegister);
 authRouter.post("/login/user", authController.UserLogin);

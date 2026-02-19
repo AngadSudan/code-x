@@ -74,7 +74,6 @@ class AuthController {
     async CreateInterviewer(req: Request, res: Response) {
         try {
             const data: CreateInterviewerBody = req.body;
-            if (!req.user) throw new Error("User is not authenticated");
             const existingInterviewer = await prismaClient.interviewer.findUnique({
                 where: { email: data.email }
             });
@@ -88,7 +87,7 @@ class AuthController {
                     email: data.email,
                     username: data.username,
                     password: hashedPassword,
-                    organizationId: req.user.id,
+                    organizationId: "698b347a2927cd5892ece1f5",
                 }
             });
             const email = data.email;
