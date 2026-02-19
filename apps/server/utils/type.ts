@@ -123,3 +123,18 @@ export interface projectMediaPayload {
   url: string;
   caption?: string;
 }
+
+export interface JobListing{
+  jobDescription:string;
+  jobRole:string;
+  jobType: "REMOTE" | "OFFLINE" | "HYBRID" | "FREELANCE";
+  startDate: string;
+  endDate: string;
+  payment: string;
+}
+
+export interface JobApplication{
+  resume:string;
+  candidateId:string;
+  jobListingId:string;
+}
