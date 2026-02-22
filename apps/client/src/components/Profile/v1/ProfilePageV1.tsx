@@ -16,7 +16,7 @@ export default function ProfilePageV1() {
       className={`${Colors.background.primary} min-h-screen grid grid-cols-4 grid-rows-2 gap-4 p-${sizes.large}`}
     >
       <div className={`w-full h-full row-span-2 rounded-xl`}><SideSection /></div>
-      <div className={`${Colors.background.primary} w-full h-full col-span-3 row-span-2 rounded-xl flex flex-col`}>
+      <div className={`${Colors.background.secondary} w-full h-full col-span-3 row-span-2 rounded-xl flex flex-col`}>
         <TopSection />
         <BottomSection />
       </div>

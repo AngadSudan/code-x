@@ -62,3 +62,26 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@keyframes spin-slow {
+  0% {
+    transform: rotate(0deg) scale(1);
+    border-top: transparent;
+  }
+
+  50% {
+    transform: rotate(180deg) scale(1.1);
+    border-top: transparent;
+  }
+  
+  100% {
+    transform: rotate(360deg) scale(1);
+    border-top: transparent;
+
+  }
+}
+
+
+.animate-spin-slow {
+  animation: spin-slow 1.2s linear infinite;
+}
