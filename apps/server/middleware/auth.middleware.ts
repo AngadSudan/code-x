@@ -9,7 +9,8 @@ export const authMiddleware = async (
     next: NextFunction,
 ) => {
     try {
-        const token = req.headers.authorization?.split(" ")[1];
+        const token = req.cookies.accessToken ?? req.headers.authorization ?? "";
+        console.log(token);
         if (!token) {
             throw new Error("Unauthorised, Re-login");
         }
@@ -30,6 +31,7 @@ export const authMiddleware = async (
                 where: { id: decoded.id },
             });
         }
+        console.log(user)
         console.log("Decoded token", decoded);
         console.log("type", decoded.type);
         console.log("id", decoded.id);

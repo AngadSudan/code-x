@@ -62,7 +62,7 @@ class AuthController {
                 id: organization.id,
                 type: "ORGANIZATION",
             });
-            res.cookie("accessToken", token, {
+            res.cookie("accessToken", token.accessToken, {
                 httpOnly: true,
                 secure: false,
                 sameSite: "lax",
@@ -90,7 +90,7 @@ class AuthController {
                     email: data.email,
                     username: data.username,
                     password: hashedPassword,
-                    organizationId: "698b347a2927cd5892ece1f5",
+                    organizationId: "698b347a2927cd5892ece1f5" as any,
                 }
             });
             const email = data.email;
@@ -129,9 +129,9 @@ class AuthController {
             });
             const token = generateFreshTokens({
                 id: interviewer.id,
-                type: "ORGANIZATION",
+                type:"INTERVIEWER",
             });
-            res.cookie("accessToken", token, {
+            res.cookie("accessToken", token.accessToken, {
                 httpOnly: true,
                 secure: false,
                 sameSite: "lax",
@@ -193,9 +193,9 @@ class AuthController {
             });
             const token = generateFreshTokens({
                 id: user.id,
-                type: "ORGANIZATION",
+                type: "USER",
             });
-            res.cookie("accessToken", token, {
+            res.cookie("accessToken", token.accessToken, {
                 httpOnly: true,
                 secure: false,
                 sameSite: "lax",
@@ -304,7 +304,7 @@ class AuthController {
 
             const tokens = generateFreshTokens({
                 id: dbUser.id,
-                type: userType,
+                type: userType!,
             });
 
             return res

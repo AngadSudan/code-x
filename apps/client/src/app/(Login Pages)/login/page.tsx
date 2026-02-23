@@ -40,7 +40,7 @@ export default function LoginPage() {
 
             const result = await res.json();
             console.log("Login success:", result);
-
+            router.push("/dashboard");
         } catch (err) {
             console.error(err);
         } finally {

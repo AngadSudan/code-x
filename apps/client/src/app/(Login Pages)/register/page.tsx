@@ -49,7 +49,7 @@ export default function RegisterPage() {
 
             const result = await res.json();
             console.log(result);
-            router.push("/dashboard");
+            // router.push("/dashboard");
 
         } catch (err) {
             console.error(err);
