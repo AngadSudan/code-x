@@ -53,5 +53,6 @@ export interface InterviewInfo {
 }
 export interface Message {
   message: string;
-  uid: string;
+  author: string;
+  timestamp: string;
 }

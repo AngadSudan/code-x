@@ -27,6 +27,7 @@ function JoinInterview(data: InterviewMember) {
           uid={intervieweeData?.uid || ""}
           containerUrl={intervieweeData?.containerUrl || ""}
           isHost={data.isHost}
+          socket={socketRef}
         />
       )}
     </>

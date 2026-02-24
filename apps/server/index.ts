@@ -20,6 +20,7 @@ import userRouter from "./routes/user.route";
 import organizationRouter from "./routes/organization.route";
 import initializeSocket from "./socket/socket";
 import chalk from "chalk";
+import interviewRouter from "./routes/interview.route";
 
 dotenv.config({ path: "../.env" });
 
@@ -94,6 +95,7 @@ declare global {
 // routes
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/organizations", organizationRouter);
+app.use("/api/v1/interview/", interviewRouter);
 
 const errorHandler = (
   error: any,

@@ -26,8 +26,9 @@ export default function Chat({
     if (!input.trim()) return;
 
     const newMessage: Message = {
-      uid: currentUserId,
+      author: currentUserId,
       message: input,
+      timestamp: `${new Date()}`,
     };
 
     handleSubmit(newMessage);
@@ -53,7 +54,7 @@ export default function Chat({
           <MessageCard
             key={index}
             message={msg.message}
-            isCurrentUser={msg.uid === currentUserId}
+            isCurrentUser={msg.author === currentUserId}
           />
         ))}
         <div ref={messagesEndRef} />

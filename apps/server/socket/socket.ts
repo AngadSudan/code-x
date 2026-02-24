@@ -57,14 +57,15 @@ const initializeSocket = async (server: any) => {
         );
         console.log(roomConfig);
         console.log("addded user to db");
+        socket.join(`/active-interview/${room}`);
+        console.log("candidate joined room" + room);
+        socket
+          .to(`/active-interview/${room}`)
+          .emit(SOCKET_EVENTS.PARTICIPANT_JOIN, { name: name });
       }
     }
 
-    interviewHandler(socket, io);
-
-    socket.emit(SOCKET_EVENTS.HAND_SHAKE_SUCCESS, () => {
-      console.log("interviewee joined success");
-    });
+    interviewHandler(socket, room as string);
 
     socket.on("disconnect", async () => {
       console.log("Disconnected socket:", socket.id);
@@ -83,11 +84,16 @@ const initializeSocket = async (server: any) => {
 
         if (user) {
           delete roomConfig.member[socket.id];
-
-          await cacheClient.setCache(
-            `/active-interview/${room}`,
-            JSON.stringify(roomConfig),
-          );
+          //@ts-ignore
+          if (Object.keys(roomConfig.member).length === 0) {
+            console.log("invalidating cache");
+            await cacheClient.invalidateCache(`/active-interview/${room}`);
+          } else {
+            await cacheClient.setCache(
+              `/active-interview/${room}`,
+              JSON.stringify(roomConfig),
+            );
+          }
 
           console.log("removed user from db");
           console.log(roomConfig);
@@ -99,6 +105,10 @@ const initializeSocket = async (server: any) => {
         console.log("room not found");
         await cacheClient.invalidateCache(`/active-interview/${room}`);
       }
+
+      socket
+        .to(`/active-interview/${room}`)
+        .emit(SOCKET_EVENTS.PARTICIPANT_LEAVE, { name: name });
     });
 
     socket.on("close", async () => {
@@ -119,10 +129,15 @@ const initializeSocket = async (server: any) => {
         if (user) {
           delete roomConfig.member[socket.id];
 
-          await cacheClient.setCache(
-            `/active-interview/${room}`,
-            JSON.stringify(roomConfig),
-          );
+          if (Object.keys(roomConfig.member).length === 0) {
+            console.log("invalidating cache");
+            await cacheClient.invalidateCache(`/active-interview/${room}`);
+          } else {
+            await cacheClient.setCache(
+              `/active-interview/${room}`,
+              JSON.stringify(roomConfig),
+            );
+          }
 
           console.log("removed user from db");
           console.log(roomConfig);
@@ -130,6 +145,10 @@ const initializeSocket = async (server: any) => {
           console.log("user not found in room");
           await cacheClient.invalidateCache(`/active-interview/${room}`);
         }
+
+        socket
+          .to(`/active-interview/${room}`)
+          .emit(SOCKET_EVENTS.PARTICIPANT_LEAVE, { name: name });
       } else {
         console.log("room not found");
         await cacheClient.invalidateCache(`/active-interview/${room}`);
