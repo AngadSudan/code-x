@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import axiosInstance from "@/utils/axiosInstance";
 import { useInterviewer } from "@/store/interviewer-store";
+import { useRouter } from "next/navigation";
 
 type InterviewerLoginData = {
   email: string;
@@ -20,18 +21,19 @@ export default function InterviewerLoginPage() {
     handleSubmit,
     formState: { errors },
   } = useForm<InterviewerLoginData>();
+  const router = useRouter();
   const { setData } = useInterviewer();
   const onSubmit = async (data: InterviewerLoginData) => {
     try {
       setLoading(true);
 
-      // 🚀 API PLACEHOLDER
       const res = await axiosInstance.post(
         "/api/v1/auth/login/interviewer",
         data,
       );
 
       setData(res.data.data.data);
+      router.push("/profile");
     } catch (err) {
       console.error(err);
     } finally {

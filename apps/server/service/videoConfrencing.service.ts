@@ -24,7 +24,7 @@ class VideoConferencingService {
    */
   async createToken(
     channelName: string,
-    userId: string | number,
+    userId: string,
     role: "host" | "guest",
     expireSeconds = 3600,
   ) {

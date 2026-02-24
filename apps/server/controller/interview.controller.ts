@@ -3,6 +3,7 @@ import apiResponse from "../utils/apiResponse";
 import prismaClient from "../utils/prisma";
 import generateSlug from "../utils/slug";
 import cacheClient from "../utils/redis";
+import videoConfrencingService from "../service/videoConfrencing.service";
 class InterviewController {
   // interview
   async createInterview(req: Request, res: Response) {
@@ -173,7 +174,40 @@ class InterviewController {
   }
   async joinParticipant(req: Request, res: Response) {
     try {
-      const meetingId = req.params.id;
+      const userId = req.user?.id;
+      const body: { role: "host" | "guest"; channelId: string } = req.body;
+
+      let dbUser;
+      if (req.user?.type === "INTERVIEWER") {
+        dbUser = await prismaClient.interviewer.findUnique({
+          where: { id: userId },
+        });
+      } else {
+        dbUser = await prismaClient.user.findUnique({
+          where: { id: userId },
+        });
+      }
+
+      if (!dbUser) throw new Error("user not found");
+
+      // TODO: verify if interview exists
+      // const dbInterview = await prismaClient.interview.findFirst({
+      //   where:{
+      //     slug: body.channelId
+      //   }
+      // });
+      // if(!dbInterview) throw new Error("db Interview not found");
+      // if(req.user?.type==="USER"){
+      //   //TODO: check if user is invited candidate in this interview
+      // }
+
+      const tokenData = await videoConfrencingService.createToken(
+        body.channelId,
+        dbUser.name,
+        body.role,
+      );
+
+      return res.status(200).json(apiResponse(200, "user joined", tokenData));
     } catch (error: any) {
       console.log(error);
       return res.status(200).json(apiResponse(500, error.message, null));
@@ -187,3 +221,4 @@ class InterviewController {
     }
   }
 }
+export default new InterviewController();

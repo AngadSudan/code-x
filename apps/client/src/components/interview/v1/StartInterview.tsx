@@ -1,8 +1,9 @@
 import { InterviewInfo, InterviewMember } from "@/utils/type";
 import InterviewConformation from "./InterviewConformation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useColors } from "@/components/General/(Color Manager)/useColors";
 import InterviewCall from "./InterviewCall";
+import { Socket } from "socket.io-client";
 
 function StartInterview(data: InterviewMember) {
   const theme = useColors();
@@ -10,6 +11,7 @@ function StartInterview(data: InterviewMember) {
   const [interviewData, setInterviewData] = useState<InterviewInfo | null>(
     null,
   );
+  const socketRef = useRef<Socket | null>(null);
   return (
     <div className={`${theme.background.primary}`}>
       {!confirmed ? (
@@ -18,6 +20,7 @@ function StartInterview(data: InterviewMember) {
           isHost={data.isHost}
           interviewData={setInterviewData}
           setConfirmed={setConfirmed}
+          socket={socketRef}
         />
       ) : (
         <InterviewCall
@@ -26,6 +29,8 @@ function StartInterview(data: InterviewMember) {
           token={interviewData?.token || ""}
           uid={interviewData?.uid || ""}
           containerUrl={interviewData?.containerUrl || ""}
+          socket={socketRef}
+          isHost={data.isHost}
         />
       )}
     </div>

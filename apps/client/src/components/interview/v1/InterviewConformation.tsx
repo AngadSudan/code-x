@@ -6,6 +6,7 @@ import type { Socket } from "socket.io-client";
 import SOCKET_EVENTS from "@/utils/socket-event";
 import { useInterviewer } from "@/store/interviewer-store";
 import { useUserStore } from "@/store/user-store";
+import axiosInstance from "@/utils/axiosInstance";
 
 interface fnHandler {
   isHost: boolean;
@@ -20,6 +21,15 @@ async function getToken(isHost: boolean, interviewId: string) {
     const role = isHost ? "host" : "guest";
     const channelId = interviewId;
 
+    const response = await axiosInstance.post(
+      "/api/v1/interview/meeting/token",
+      {
+        role,
+        channelId,
+      },
+    );
+
+    console.log(response.data.data);
     //TODO: api call here
     return {
       token:
@@ -40,6 +50,7 @@ function connectToSocket(
   isHost: boolean,
 ) {
   try {
+    console.log(socketRef);
     const socket: Socket = io(
       process.env.NEXT_PUBLIC_BACKEND_URL +
         `?room=${interviewId}&name=${info.name}&username=${info.username}&role=${isHost ? "HOST" : "CANDIDATE"}`,
@@ -53,8 +64,9 @@ function connectToSocket(
         timeout: 20000,
       },
     );
+    console.log(socket);
     socketRef.current = socket;
-
+    console.log(socketRef);
     socketRef.current.on(SOCKET_EVENTS.CONNECT, () => {
       console.log(socketRef.current);
       console.log("socket connected");
@@ -64,6 +76,7 @@ function connectToSocket(
     });
   } catch (error: any) {
     console.log("error connecting to socket");
+    console.log(error);
   }
 }
 function InterviewConformation(prop: fnHandler) {
@@ -74,7 +87,7 @@ function InterviewConformation(prop: fnHandler) {
   const handleClick = async () => {
     const data = await getToken(prop.isHost, prop.interviewId);
     prop.interviewData(data!);
-
+    console.log(prop.socket);
     if (hasHydrated && interviewerInfo !== null) {
       connectToSocket(
         prop.socket,

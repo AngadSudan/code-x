@@ -1,4 +1,12 @@
 import { Router } from "express";
-const interviewerRouter = Router();
+import { authMiddleware } from "../middleware/auth.middleware";
+import interviewController from "../controller/interview.controller";
+const interviewRouter = Router();
 
-export default interviewerRouter;
+interviewRouter.post(
+  "/meeting/token",
+  authMiddleware,
+  interviewController.joinParticipant,
+);
+
+export default interviewRouter;
