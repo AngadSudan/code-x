@@ -45,22 +45,20 @@ function AllSuitesV1() {
 
   useEffect(() => {
     let data = [...interviewSuites];
+    if (data.length === 0) return;
 
-    // 🔎 Name filter
     if (filters.search.trim()) {
       data = data.filter((suite) =>
         suite.name.toLowerCase().includes(filters.search.toLowerCase()),
       );
     }
 
-    // 📌 Publish Status
     if (filters.publishStatus !== "ALL") {
       data = data.filter(
         (suite) => suite.publishStatus === filters.publishStatus,
       );
     }
 
-    // 📅 Date Range
     if (filters.startDateFrom) {
       data = data.filter(
         (suite) =>
@@ -86,6 +84,7 @@ function AllSuitesV1() {
 
     setFilteredData(data);
   }, [filters, interviewSuites]);
+
   useEffect(() => {
     if (!interviewInfo?.id && !orgInfo?.id) return;
 
@@ -112,10 +111,11 @@ function AllSuitesV1() {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
   }, [filters]);
+  console.log(filteredData);
   return (
     <div className={`h-screen flex gap-4 ${themes.background.secondary}`}>
       <Sidebar />
-      <div>
+      <div className="w-full">
         <Filter filters={filters} setFilters={setFilters} />
         <DisplaySuites suites={filteredData} />
       </div>

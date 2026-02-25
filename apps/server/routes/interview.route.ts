@@ -15,6 +15,11 @@ interviewRouter.put(
   authMiddleware,
   interviewSuiteController.updateInterviewSuite,
 );
+interviewRouter.put(
+  "/interview-suite/change-status/:id",
+  authMiddleware,
+  interviewSuiteController.updateSuiteState,
+);
 interviewRouter.delete(
   "/interview-suite/delete/:id",
   authMiddleware,

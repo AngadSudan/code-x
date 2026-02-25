@@ -28,7 +28,7 @@ class VideoConferencingService {
     role: "host" | "guest",
     expireSeconds = 3600,
   ) {
-    const agoraRole = role === "host" ? RtcRole.PUBLISHER : RtcRole.SUBSCRIBER;
+    const agoraRole = RtcRole.PUBLISHER;
 
     const expirationTimeInSeconds =
       Math.floor(Date.now() / 1000) + expireSeconds;

@@ -4,52 +4,46 @@ import apiResponse from "../utils/apiResponse";
 import prismaClient from "../utils/prisma";
 
 export const authMiddleware = async (
-    req: Request,
-    res: Response,
-    next: NextFunction,
+  req: Request,
+  res: Response,
+  next: NextFunction,
 ) => {
-    try {
-        const token = req.cookies.accessToken ?? req.headers.authorization ?? "";
-        console.log(token);
-        if (!token) {
-            throw new Error("Unauthorised, Re-login");
-        }
-        console.log(token);
-        const decoded = verifyAccessToken(token);
+  try {
+    const token = req.cookies.accessToken ?? req.headers.authorization ?? "";
 
-        let user;
-        if (decoded.type === "ORGANIZATION") {
-            user = await prismaClient.organization.findUnique({
-                where: { id: decoded.id },
-            });
-        } else if (decoded.type === "INTERVIEWER") {
-            user = await prismaClient.interviewer.findUnique({
-                where: { id: decoded.id },
-            });
-        } else if (decoded.type === "USER") {
-            user = await prismaClient.user.findUnique({
-                where: { id: decoded.id },
-            });
-        }
-        console.log(user)
-        console.log("Decoded token", decoded);
-        console.log("type", decoded.type);
-        console.log("id", decoded.id);
-        if (!user) {
-            return res
-                .status(401)
-                .json(apiResponse(401, "UNAUTHORIZED ENTITY", null));
-        }
-        console.log("Decoded token", decoded);
-        console.log("type", decoded.type);
-        console.log("id", decoded.id);
-        req.user = {
-            id: decoded.id,
-            type: decoded.type,
-        };
-
-        next();
-    } catch (error: any) {
-        return res.status(401).json(apiResponse(401, error.message, null));
+    if (!token) {
+      throw new Error("Unauthorised, Re-login");
     }
+    const decoded = verifyAccessToken(token);
+
+    let user;
+    if (decoded.type === "ORGANIZATION") {
+      user = await prismaClient.organization.findUnique({
+        where: { id: decoded.id },
+      });
+    } else if (decoded.type === "INTERVIEWER") {
+      user = await prismaClient.interviewer.findUnique({
+        where: { id: decoded.id },
+      });
+    } else if (decoded.type === "USER") {
+      user = await prismaClient.user.findUnique({
+        where: { id: decoded.id },
+      });
+    }
+
+    if (!user) {
+      return res
+        .status(401)
+        .json(apiResponse(401, "UNAUTHORIZED ENTITY", null));
+    }
+
+    req.user = {
+      id: decoded.id,
+      type: decoded.type,
+    };
+
+    next();
+  } catch (error: any) {
+    return res.status(401).json(apiResponse(401, error.message, null));
+  }
 };

@@ -52,7 +52,7 @@ export const LightSemantic = {
     primary: Palette.custom_surface,
     secondary: Palette.custom_light,
     accent: Palette.custom_gray,
-    special: Palette.custom_green,
+    special: Palette.custom_dark_green,
   },
 
   hero: {

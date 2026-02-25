@@ -60,15 +60,14 @@ export interface Message {
 export interface Suite {
   id: string;
   name: string;
-  startDate: Date;
-  endDate: Date;
-
+  startDate: string;
+  endDate: string;
   jobListingId: string;
   creatorId: string;
   orgId: string;
   publishStatus: "NOT_PUBLISHED" | "PUBLISHED";
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface SuiteFilters {

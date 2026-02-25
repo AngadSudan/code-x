@@ -5,7 +5,7 @@ function Sidebar() {
   const theme = useColors();
   return (
     <div
-      className={`w-1/5 h-screen rounded-md ${theme.background.primary} ${theme.border.defaultThick}`}
+      className={`w-1/5 h-screen rounded-md ${theme.background.primary} ${theme.border.defaultThin}`}
     >
       Sidebar
     </div>

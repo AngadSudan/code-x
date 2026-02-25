@@ -89,7 +89,91 @@ class InterviewSuiteController {
           name: data.name ?? dbInterviewSuite.name,
           startDate: data.startDate ?? dbInterviewSuite.startDate,
           endDate: data.endDate ?? dbInterviewSuite.endDate,
-          publishStatus: data.publishStatus ?? dbInterviewSuite.publishStatus,
+        },
+        select: {
+          name: true,
+          startDate: true,
+          endDate: true,
+          publishStatus: true,
+          organization: {
+            select: {
+              name: true,
+              email: true,
+              username: true,
+            },
+          },
+          jobListing: {
+            select: {
+              jobDescription: true,
+              startDate: true,
+              endDate: true,
+            },
+          },
+        },
+      });
+
+      if (!updatedSuite) throw new Error("error updating interview suite");
+      await cacheClient.invalidateCache(`/interview-suit/${suiteId}`);
+      await cacheClient.invalidateCache(
+        `/interview-suite/company/${dbUser.orgId}`,
+      );
+      return res
+        .status(200)
+        .json(apiResponse(200, "interview suite updated", updatedSuite));
+    } catch (error: any) {
+      console.log(error);
+      return res.status(200).json(apiResponse(500, error.message, null));
+    }
+  }
+  async updateSuiteState(req: Request, res: Response) {
+    try {
+      const userId = req.user?.id;
+      const suiteId = req.params.id;
+
+      if (!userId) throw new Error("userId is required");
+      if (!suiteId) throw new Error("suiteId is  missing");
+      if (req.user?.type === "USER") throw new Error("unauthorized");
+
+      const dbUser = await prismaClient.interviewer.findUnique({
+        where: { id: userId },
+      });
+      if (!dbUser) throw new Error("no interviewer found");
+
+      const dbInterviewSuite = await prismaClient.interviewSuite.findUnique({
+        where: { id: suiteId as string },
+      });
+
+      if (!dbInterviewSuite) throw new Error("No interviewSuite found");
+
+      const updatedSuite = await prismaClient.interviewSuite.update({
+        where: {
+          id: dbInterviewSuite.id,
+        },
+        data: {
+          publishStatus:
+            dbInterviewSuite.publishStatus === "PUBLISHED"
+              ? "NOT_PUBLISHED"
+              : "PUBLISHED",
+        },
+        select: {
+          name: true,
+          startDate: true,
+          endDate: true,
+          publishStatus: true,
+          organization: {
+            select: {
+              name: true,
+              email: true,
+              username: true,
+            },
+          },
+          jobListing: {
+            select: {
+              jobDescription: true,
+              startDate: true,
+              endDate: true,
+            },
+          },
         },
       });
 
@@ -154,20 +238,20 @@ class InterviewSuiteController {
       if (!suiteId) throw new Error("suiteId is  missing");
       if (req.user?.type === "USER") throw new Error("unauthorized");
 
-      const cachedResponse = await cacheClient.getCache(
-        `/interview-suit/${suiteId}`,
-      );
-      if (cachedResponse) {
-        return res
-          .status(200)
-          .json(
-            apiResponse(
-              200,
-              "interview suite fetched",
-              JSON.parse(cachedResponse),
-            ),
-          );
-      }
+      // const cachedResponse = await cacheClient.getCache(
+      //   `/interview-suit/${suiteId}`,
+      // );
+      // if (cachedResponse) {
+      //   return res
+      //     .status(200)
+      //     .json(
+      //       apiResponse(
+      //         200,
+      //         "interview suite fetched",
+      //         JSON.parse(cachedResponse),
+      //       ),
+      //     );
+      // }
 
       const dbUser = await prismaClient.interviewer.findUnique({
         where: { id: userId },
@@ -181,6 +265,13 @@ class InterviewSuiteController {
           startDate: true,
           endDate: true,
           publishStatus: true,
+          organization: {
+            select: {
+              name: true,
+              email: true,
+              username: true,
+            },
+          },
           jobListing: {
             select: {
               jobDescription: true,
@@ -227,7 +318,11 @@ class InterviewSuiteController {
         return res
           .status(200)
           .json(
-            apiResponse(200, "interview suite fetched", cachedInterviewSuite),
+            apiResponse(
+              200,
+              "interview suite fetched",
+              JSON.parse(cachedInterviewSuite),
+            ),
           );
       }
       // TODO: add a check for interviewer vs organization
@@ -250,7 +345,6 @@ class InterviewSuiteController {
       return res.status(200).json(apiResponse(500, error.message, null));
     }
   }
-
   // interview-round
   async createInterviewRound(req: Request, res: Response) {
     try {
@@ -290,7 +384,7 @@ class InterviewSuiteController {
 
       return res
         .status(200)
-        .json(apiResponse(200, "interview round not created", createdRound));
+        .json(apiResponse(200, "interview round created", createdRound));
     } catch (error: any) {
       console.log(error);
       return res.status(200).json(apiResponse(500, error.message, null));

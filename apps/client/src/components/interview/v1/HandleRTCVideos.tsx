@@ -9,6 +9,7 @@ import {
   useRemoteUsers,
   RemoteUser,
   LocalVideoTrack,
+  useRTCClient,
 } from "agora-rtc-react";
 import { useEffect, useState } from "react";
 import { useColors } from "@/components/General/(Color Manager)/useColors";
@@ -22,7 +23,7 @@ interface Props {
 
 export default function HandleRTCVideos(props: Props) {
   const colors = useColors();
-
+  const client = useRTCClient();
   const { localCameraTrack } = useLocalCameraTrack(true);
   const { localMicrophoneTrack } = useLocalMicrophoneTrack(true);
 
@@ -36,7 +37,11 @@ export default function HandleRTCVideos(props: Props) {
     uid: props.username,
   });
 
-  usePublish([isCameraOff ? null : localCameraTrack, localMicrophoneTrack]);
+  usePublish(
+    localCameraTrack && localMicrophoneTrack
+      ? [localCameraTrack, localMicrophoneTrack]
+      : [],
+  );
 
   const remoteUsers = useRemoteUsers();
   const { audioTracks } = useRemoteAudioTracks(remoteUsers);
@@ -60,7 +65,22 @@ export default function HandleRTCVideos(props: Props) {
     await localCameraTrack.setEnabled(isCameraOff);
     setIsCameraOff(!isCameraOff);
   };
+  console.log("Local camera track:", localCameraTrack);
+  console.log("Remote users:", remoteUsers);
 
+  useEffect(() => {
+    const handleUserPublished = async (user: any, mediaType: any) => {
+      console.log("User published:", mediaType);
+      await client.subscribe(user, mediaType);
+      console.log("Subscribed to:", mediaType);
+    };
+
+    client.on("user-published", handleUserPublished);
+
+    return () => {
+      client.off("user-published", handleUserPublished);
+    };
+  }, [client]);
   return (
     <div className={`flex gap-4 p-4 rounded-xl ${colors.background.secondary}`}>
       {/* LOCAL TILE */}
@@ -124,7 +144,7 @@ export default function HandleRTCVideos(props: Props) {
       {/* REMOTE TILE */}
       {remoteUsers.map((user) => {
         const hasVideo = user.videoTrack;
-
+        console.log(user);
         return (
           <div
             key={user.uid}
