@@ -1,4 +1,5 @@
 import { useColors } from "@/components/General/(Color Manager)/useColors";
+import { useRouter } from "next/navigation";
 import React from "react";
 
 export interface Round {
@@ -18,7 +19,7 @@ interface RoundsProps {
 
 function Rounds({ filtered }: RoundsProps) {
   const colors = useColors();
-
+  const router = useRouter();
   if (filtered.length === 0) {
     return (
       <div
@@ -33,8 +34,13 @@ function Rounds({ filtered }: RoundsProps) {
     <div className="grid grid-cols-3 mt-4 gap-4">
       {filtered.map((round) => (
         <div
+          onClick={() =>
+            router.push(
+              `/interviewer-dashboard/interview-suite/round/` + round.id,
+            )
+          }
           key={round.id}
-          className={`p-5 rounded-xl ${colors.background.secondary} ${colors.border.defaultThin} ${colors.text.primary}`}
+          className={`p-5 cursor-pointer rounded-xl ${colors.background.secondary} ${colors.border.defaultThin} ${colors.text.primary}`}
         >
           {/* Header */}
           <div className="flex justify-between items-center mb-3">

@@ -29,7 +29,7 @@ function Applications({
   if (filtered.length === 0) {
     return (
       <div
-        className={`w-full p-6 text-center rounded-lg ${colors.background.secondary} ${colors.border.defaultThin} ${colors.text.primary}`}
+        className={`w-full h-[70svh] mt-3 flex items-center justify-center p-6 text-center rounded-lg ${colors.background.secondary} ${colors.border.defaultThin} ${colors.text.primary}`}
       >
         No Applications Found
       </div>
@@ -37,11 +37,22 @@ function Applications({
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col h-[70svh] mt-3 gap-4">
       {/* Application Cards */}
-      {filtered.map((app, index) => (
-        <ApplicationCard key={index} />
-      ))}
+      <table className={"w-full " + `${colors.text.primary}`}>
+        <thead className="w-full justify-evenly">
+          <th>name</th>
+          <th>email</th>
+          <th>resume</th>
+          <th>currentStatus</th>
+          <th>View Details</th>
+        </thead>
+        <tbody>
+          {filtered.map((app, index) => (
+            <ApplicationCard key={index} data={app} />
+          ))}
+        </tbody>
+      </table>
 
       {/* Pagination Controls */}
       <div className="flex justify-between items-center mt-4">
@@ -50,7 +61,7 @@ function Applications({
           disabled={!hasPrev}
           className={`px-4 py-2 rounded-md ${
             hasPrev
-              ? `${colors.background.heroPrimary} ${colors.text.primary}`
+              ? `${colors.background.special} ${colors.text.primary}`
               : "opacity-50 cursor-not-allowed"
           } ${colors.properties.interactiveButton}`}
         >
@@ -62,7 +73,7 @@ function Applications({
           disabled={!hasNext}
           className={`px-4 py-2 rounded-md ${
             hasNext
-              ? `${colors.background.heroPrimary} ${colors.text.primary}`
+              ? `${colors.background.special} ${colors.text.primary}`
               : "opacity-50 cursor-not-allowed"
           } ${colors.properties.interactiveButton}`}
         >

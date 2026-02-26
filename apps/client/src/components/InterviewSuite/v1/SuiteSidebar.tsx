@@ -57,7 +57,7 @@ function SuiteSidebar({ info, onUpdate, onPublish }: SuiteSidebarProps) {
   if (!info || !editableInfo) {
     return (
       <div
-        className={`w-1/3 h-screen p-4 rounded-md animate-pulse ${colors.background.secondary} ${colors.border.defaultThin}`}
+        className={`w-full h-screen p-4 rounded-md animate-pulse ${colors.background.secondary} ${colors.border.defaultThin}`}
       >
         <div className="h-6 w-3/4 bg-gray-300 rounded mb-4" />
         <div className="h-4 w-full bg-gray-300 rounded mb-2" />
@@ -90,7 +90,7 @@ function SuiteSidebar({ info, onUpdate, onPublish }: SuiteSidebarProps) {
 
   return (
     <div
-      className={`flex flex-col justify-between h-full w-1/3 p-8 rounded-md ${colors.background.secondary} ${colors.border.defaultThin}`}
+      className={`flex flex-col justify-between h-full w-full p-8 rounded-md ${colors.background.secondary} ${colors.border.defaultThin}`}
     >
       {/* ================= CONTENT ================= */}
       <div>

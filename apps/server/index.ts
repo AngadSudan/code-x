@@ -84,7 +84,10 @@ app.get("/health", async (req, res) => {
   });
 });
 app.use("/api/v1/auth", authRouter);
-
+app.use("/api/admin/v1/flush/redis", async (req, res) => {
+  const data = await cacheClient.clearAllCache();
+  return res.status(200).json({ message: "cleared all cache storage" });
+});
 declare global {
   namespace Express {
     interface Request {

@@ -71,11 +71,21 @@ function InterviewSuiteV1({ id }: { id: string }) {
     setRounds(res.data.data || []);
   };
   const fetchPage = async () => {
-    // TODO: fetch all the job application from suite
-    //setCandidate
-    //setHasNext
-    //setTotalPage
-    //setHasPrev
+    const res = await axiosInstance.get(
+      "/api/v1/interview/interview-suite/application/get-all-application/" +
+        id +
+        "?page=" +
+        page,
+    );
+    console.log(res.data.data.data);
+    setCandidate(res.data.data.data);
+    if (page < res.data.data.totalPages) {
+      setHasNext(true);
+    }
+    setTotalPage(res.data.data.totalPages);
+    if (page > 0) {
+      setHasPrev(true);
+    }
   };
   const handlePublish = async (id: string) => {
     try {
@@ -163,6 +173,7 @@ function InterviewSuiteV1({ id }: { id: string }) {
     fetchPage();
   }, [page]);
   useEffect(() => {
+    console.log(candidate);
     let data = [...candidate];
     if (data.length === 0) return;
 
@@ -170,78 +181,100 @@ function InterviewSuiteV1({ id }: { id: string }) {
     setFilteredCandidates(data || []);
   }, [applicationFilter, candidate]);
   return (
-    <div
-      className={`relative h-screen flex gap-2 ${colors.background.primary}`}
-    >
-      {showForm && (
-        <div className="bg-gray-500">
-          <RoundForm
-            onClose={() => setShowForm(false)}
-            onSubmit={(data) => handleRoundCreation(data)}
-          />
-        </div>
-      )}
-      <SuiteSidebar
-        onUpdate={(data) => {
-          handleUpdate(data);
-        }}
-        onPublish={() => handlePublish(id)}
-        info={suiteInfo}
-      />
-      <div className={"h-screen w-full" + `${colors.background.primary}`}>
-        <div className="w-full flex my-2 justify-evenly items-center">
+    <div className={`h-screen flex ${colors.background.primary}`}>
+      {/* Sidebar - Fixed Width */}
+      <div className="w-72 min-w-72 max-w-72 h-full shrink-0">
+        <SuiteSidebar
+          onUpdate={(data) => {
+            handleUpdate(data);
+          }}
+          onPublish={() => handlePublish(id)}
+          info={suiteInfo}
+        />
+      </div>
+
+      {/* Right Content - Flexible but Stable */}
+      <div
+        className={`flex-1 h-full overflow-hidden flex flex-col ${colors.background.primary}`}
+      >
+        {/* Tabs */}
+        <div className="w-full flex my-2 justify-evenly items-center px-4">
           <button
             onClick={() => {
               setTab("round");
               const params = new URLSearchParams(query.toString());
               params.set("tab", "round");
-
               router.push(`?${params.toString()}`);
             }}
-            className={`${colors.text.primary} ${colors.border.defaultThin} w-1/2 cursor-pointer ${tab === "round" ? colors.background.special : colors.background.primary} rounded-sm`}
+            className={`${colors.text.primary} ${colors.border.defaultThin} w-1/2 cursor-pointer ${
+              tab === "round"
+                ? colors.background.special
+                : colors.background.primary
+            } rounded-sm`}
           >
             Rounds
           </button>
+
           <button
             onClick={() => {
               setTab("application");
               const params = new URLSearchParams(query.toString());
               params.set("tab", "application");
-
               router.push(`?${params.toString()}`);
             }}
-            className={`${colors.text.primary} ${colors.border.defaultThin} w-1/2 cursor-pointer ${tab === "round" ? colors.background.primary : colors.background.special} rounded-sm`}
+            className={`${colors.text.primary} ${colors.border.defaultThin} w-1/2 cursor-pointer ${
+              tab === "application"
+                ? colors.background.special
+                : colors.background.primary
+            } rounded-sm`}
           >
             Application
           </button>
         </div>
-        {tab === "round" && (
-          <>
-            <Filter
-              filter={filter}
-              showForm={showForm}
-              setFilter={setFilter}
-              setShowForm={setShowForm}
-            />
-            <Rounds filtered={filteredRounds} />
-          </>
-        )}
-        {tab === "application" && (
-          <>
-            <ApplicationFilter
-              filter={applicationFilter}
-              setFilter={setApplicationFilter}
-            />
-            <Applications
-              hasNext={hasNext}
-              moveNext={() => nextPage()}
-              movePrev={() => prevPage()}
-              hasPrev={hasPrev}
-              filtered={filteredCandidates}
-            />
-          </>
-        )}
+
+        {/* Scrollable Content Area */}
+        <div className="flex-1 overflow-y-auto px-4">
+          {tab === "round" && (
+            <>
+              <Filter
+                filter={filter}
+                showForm={showForm}
+                setFilter={setFilter}
+                setShowForm={setShowForm}
+              />
+              <Rounds filtered={filteredRounds} />
+            </>
+          )}
+
+          {tab === "application" && (
+            <>
+              <ApplicationFilter
+                filter={applicationFilter}
+                setFilter={setApplicationFilter}
+              />
+              <Applications
+                hasNext={hasNext}
+                moveNext={() => nextPage()}
+                movePrev={() => prevPage()}
+                hasPrev={hasPrev}
+                filtered={filteredCandidates}
+              />
+            </>
+          )}
+        </div>
       </div>
+
+      {/* Optional Modal Form Overlay */}
+      {showForm && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-gray-500 p-4 rounded-md">
+            <RoundForm
+              onClose={() => setShowForm(false)}
+              onSubmit={(data) => handleRoundCreation(data)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

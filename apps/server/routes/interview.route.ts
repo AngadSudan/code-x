@@ -62,6 +62,25 @@ interviewRouter.get(
   authMiddleware,
   interviewSuiteController.getAllInterviewRoundBySuite,
 );
+interviewRouter.get(
+  "/interview-suite/round/interview/:id",
+  authMiddleware,
+  interviewController.getAllRoundInterview,
+);
+// interview applications status
+
+interviewRouter.get(
+  "/interview-suite/application/get-all-application/:id",
+  authMiddleware,
+  interviewSuiteController.getAllApplication,
+);
+
+// interview round candidates
+interviewRouter.get(
+  "/interview-suite/round/candidate/:id",
+  authMiddleware,
+  interviewSuiteController.getAllRoundCanddate,
+);
 
 // interview related actions
 interviewRouter.post(

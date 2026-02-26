@@ -58,6 +58,28 @@ class RedisClient implements RedisClientInterface {
       console.log("Redis upload error: ", error);
     }
   }
+  async clearAllCache() {
+    let cursor = "0";
+
+    do {
+      const result = await this.client.scan(cursor, {
+        MATCH: "*",
+        COUNT: 100,
+      });
+
+      cursor = result.cursor;
+
+      for (const key of result.keys) {
+        const type = await this.client.type(key);
+        console.log(key);
+        if (type === "string") {
+          await this.client.del(key);
+        }
+      }
+    } while (cursor !== "0");
+
+    console.log("String cache cleared safely.");
+  }
 }
 
 export default RedisClient;

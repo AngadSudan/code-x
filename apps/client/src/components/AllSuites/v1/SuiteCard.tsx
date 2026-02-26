@@ -34,8 +34,8 @@ export default function SuiteCard({ info }: { info: Suite }) {
     PUBLISHED: {
       label: "Published",
       dot: "bg-[var(--hero-primary)]",
-      pill: `${colors.background.heroPrimaryFaded} ${colors.text.special} ${colors.border.greenThin}`,
-      accent: "var(--hero-primary)",
+      pill: `${colors.background.special} ${colors.text.inverted}`,
+      accent: `${colors.background.special}`,
     },
     NOT_PUBLISHED: {
       label: "Draft",
@@ -73,17 +73,6 @@ export default function SuiteCard({ info }: { info: Suite }) {
         fontFamily: "'DM Sans', 'Sora', sans-serif",
       }}
     >
-      {/* Accent bar */}
-      <div
-        className="absolute top-0 left-0 right-0 h-0.75 transition-all duration-300"
-        style={{
-          background: isPublished
-            ? "linear-gradient(90deg, var(--hero-primary), var(--hero-secondary, var(--hero-primary)))"
-            : "var(--border-faded)",
-          opacity: isPublished ? 1 : 0.5,
-        }}
-      />
-
       <div className="p-6 pt-7">
         {/* Header row */}
         <div className="flex items-start justify-between gap-4 mb-6">

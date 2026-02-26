@@ -238,20 +238,20 @@ class InterviewSuiteController {
       if (!suiteId) throw new Error("suiteId is  missing");
       if (req.user?.type === "USER") throw new Error("unauthorized");
 
-      // const cachedResponse = await cacheClient.getCache(
-      //   `/interview-suit/${suiteId}`,
-      // );
-      // if (cachedResponse) {
-      //   return res
-      //     .status(200)
-      //     .json(
-      //       apiResponse(
-      //         200,
-      //         "interview suite fetched",
-      //         JSON.parse(cachedResponse),
-      //       ),
-      //     );
-      // }
+      const cachedResponse = await cacheClient.getCache(
+        `/interview-suit/${suiteId}`,
+      );
+      if (cachedResponse) {
+        return res
+          .status(200)
+          .json(
+            apiResponse(
+              200,
+              "interview suite fetched",
+              JSON.parse(cachedResponse),
+            ),
+          );
+      }
 
       const dbUser = await prismaClient.interviewer.findUnique({
         where: { id: userId },
@@ -561,17 +561,20 @@ class InterviewSuiteController {
       });
       if (!dbRound) throw new Error("no such dbSuite found");
 
-      const cachedRound = await cacheClient.getCache(
-        `/interview/${dbRound.suiteId}/rounds/${dbRound.id}`,
-      );
-      if (cachedRound) {
-        return res
-          .status(200)
-          .json(apiResponse(200, "interview round fetched", cachedRound));
-      }
+      // const cachedRound = await cacheClient.getCache(
+      //   `/interview/${dbRound.suiteId}/rounds/${dbRound.id}`,
+      // );
+      // if (cachedRound) {
+      //   return res
+      //     .status(200)
+      //     .json(apiResponse(200, "interview round fetched", cachedRound));
+      // }
 
       const interviewRound = await prismaClient.interviewSuiteRound.findUnique({
         where: { id: dbRound.id },
+        include: {
+          suite: true,
+        },
       });
 
       if (!interviewRound) throw new Error("no such interview Round found");
@@ -594,11 +597,11 @@ class InterviewSuiteController {
   async getAllApplication(req: Request, res: Response) {
     try {
       const userId = req.user?.id;
-      const jobListingId = req.params.id;
+      const suiteId = req.params.id;
       const pageNumber = Number(req.query.page) || 0;
-
+      console.log(pageNumber);
       if (!userId) throw new Error("userId not found");
-      if (!jobListingId) throw new Error("jobListingId not found");
+      if (!suiteId) throw new Error("suiteId not found");
       if (req.user?.type === "USER") throw new Error("unauthorized");
 
       let dbUser;
@@ -612,26 +615,49 @@ class InterviewSuiteController {
         });
       }
 
+      const dbSuite = await prismaClient.interviewSuite.findUnique({
+        where: { id: suiteId as string },
+      });
+
+      if (!dbSuite) throw new Error("suite not found!");
+
       if (!dbUser) throw new Error("db user not found");
       const dbJobListing = await prismaClient.jobListing.findUnique({
-        where: { id: jobListingId as string },
+        where: { id: dbSuite.jobListingId as string },
       });
       if (!dbJobListing) throw new Error("job listing not found");
 
-      const cachedData = await cacheClient.getCache(
-        `/job-listing/${dbJobListing?.id}/application?pageNumber=${pageNumber}`,
-      );
-      if (cachedData) {
-        return res
-          .status(200)
-          .json(
-            apiResponse(200, "applications fetched", JSON.parse(cachedData)),
-          );
-      }
+      // const cachedData = await cacheClient.getCache(
+      //   `/job-listing/${dbJobListing?.id}/application?pageNumber=${pageNumber}`,
+      // );
+      // if (cachedData) {
+      //   return res
+      //     .status(200)
+      //     .json(
+      //       apiResponse(200, "applications fetched", JSON.parse(cachedData)),
+      //     );
+      // }
+      const applicationCount = await prismaClient.jobApplication.count({
+        where: { jobListingId: dbJobListing.id },
+      });
+
+      const totalPages = Math.floor(applicationCount / MAX_PAGE_SIZE) + 1;
 
       const data = await prismaClient.jobApplication.findMany({
         where: {
           jobListingId: dbJobListing.id,
+        },
+        select: {
+          id: true,
+          resume: true,
+          currentStatus: true,
+          createdAt: true,
+          candidate: {
+            select: {
+              name: true,
+              email: true,
+            },
+          },
         },
         skip: MAX_PAGE_SIZE * pageNumber,
         take: MAX_PAGE_SIZE,
@@ -644,7 +670,7 @@ class InterviewSuiteController {
 
       return res
         .status(200)
-        .json(apiResponse(200, "applications fetched", data));
+        .json(apiResponse(200, "applications fetched", { data, totalPages }));
     } catch (error: any) {
       console.log(error);
       return res.status(200).json(apiResponse(500, error.message, null));
@@ -850,20 +876,20 @@ class InterviewSuiteController {
       });
       if (!dbRound) throw new Error("dbround not found");
 
-      const cachedData = await cacheClient.getCache(
-        `/interview-round/${dbRound.id}/candidates`,
-      );
-      if (cachedData) {
-        return res
-          .status(200)
-          .json(
-            apiResponse(
-              200,
-              "fetched round candidates",
-              JSON.parse(cachedData),
-            ),
-          );
-      }
+      // const cachedData = await cacheClient.getCache(
+      //   `/interview-round/${dbRound.id}/candidates`,
+      // );
+      // if (cachedData) {
+      //   return res
+      //     .status(200)
+      //     .json(
+      //       apiResponse(
+      //         200,
+      //         "fetched round candidates",
+      //         JSON.parse(cachedData),
+      //       ),
+      //     );
+      // }
 
       const data = await prismaClient.roundCandidate.findMany({
         where: { roundId: dbRound.id },
