@@ -74,15 +74,59 @@ interviewRouter.get(
   authMiddleware,
   interviewSuiteController.getAllApplication,
 );
-
+interviewRouter.get(
+  "/interview-suite/application/get-application/:id",
+  authMiddleware,
+  interviewSuiteController.getApplicationById,
+);
+interviewRouter.post(
+  "/interview-suite/application/:id/select",
+  authMiddleware,
+  interviewSuiteController.selectApplicaton,
+);
+interviewRouter.post(
+  "/interview-suite/application/:id/reject",
+  authMiddleware,
+  interviewSuiteController.rejectApplication,
+);
 // interview round candidates
 interviewRouter.get(
   "/interview-suite/round/candidate/:id",
   authMiddleware,
   interviewSuiteController.getAllRoundCanddate,
 );
+interviewRouter.post(
+  "/interview-suite/round/candidate/platform-link",
+  authMiddleware,
+  interviewSuiteController.getPlatformInformation,
+);
+interviewRouter.put(
+  "/interview-suite/round/update-status/:id/:candidateId",
+  authMiddleware,
+  interviewSuiteController.handleRoundStatusChange,
+);
 
 // interview related actions
+interviewRouter.post(
+  "/interview-suite/interview/create/:id",
+  authMiddleware,
+  interviewController.createInterview,
+);
+interviewRouter.get(
+  "/interview-suite/interview/get-all/:id",
+  authMiddleware,
+  interviewController.getAllRoundInterview,
+);
+interviewRouter.put(
+  "/interview-suite/interview/start/:id",
+  authMiddleware,
+  interviewController.startInterview,
+);
+interviewRouter.put(
+  "/interview-suite/interview/end/:id",
+  authMiddleware,
+  interviewController.startInterview,
+);
 interviewRouter.post(
   "/meeting/token",
   authMiddleware,

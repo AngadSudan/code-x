@@ -25,7 +25,7 @@ function InterviewFilter({ filter, setFilter, showInterviewForm }: fnHandler) {
   const handleReset = () => {
     setFilter({
       name: "",
-      status: "",
+      status: "ALL",
     });
   };
 
@@ -53,7 +53,7 @@ function InterviewFilter({ filter, setFilter, showInterviewForm }: fnHandler) {
           onChange={(e) => handleChange("status", e.target.value)}
           className={`w-full mt-1 px-3 py-2 rounded-md ${colors.border.fadedThin} ${colors.background.primary} ${colors.text.primary}`}
         >
-          <option value="">All</option>
+          <option value="ALL">All</option>
           <option value="PENDING">PENDING</option>
           <option value="UNDER_PROGRESS">UNDER PROGRESS</option>
           <option value="COMPLETED">COMPLETED</option>

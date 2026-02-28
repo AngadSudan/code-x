@@ -1,9 +1,11 @@
+"use client";
+import Application from "@/components/Application/Application";
+import { useParams } from "next/navigation";
 import React from "react";
 
 function page() {
-  // id here is job listingID
-  // for a particular joblisting, all the entries will be listed here
-  return <div>page</div>;
+  const param = useParams<{ id: string }>();
+  return <Application id={param.id} />;
 }
 
 export default page;

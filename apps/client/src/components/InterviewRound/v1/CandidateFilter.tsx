@@ -55,7 +55,7 @@ function CandidateFilter({ filter, setFilter }: fnHandler) {
           onChange={(e) => handleChange("status", e.target.value)}
           className={`w-full mt-1 px-3 py-2 rounded-md ${colors.border.fadedThin} ${colors.background.primary} ${colors.text.primary}`}
         >
-          <option value="">All</option>
+          <option value="ALL">All</option>
           <option value="PENDING">PENDING</option>
           <option value="SELECTED_FOR_NEXT">SELECTED FOR NEXT</option>
           <option value="REJECTED">REJECTED</option>

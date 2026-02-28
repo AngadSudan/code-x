@@ -8,11 +8,15 @@ class InterviewController {
   // interview
   async createInterview(req: Request, res: Response) {
     try {
-      const roundCandidateId = req.params.id;
+      const roundId = await req.params.id;
       const userId = req.user?.id;
+      const interviewCandidates: string[] = req.body.candidates;
 
-      if (!roundCandidateId) throw new Error("round candidate ID not found");
-      if (req.user?.type === "USER") throw new Error("unAuthorized");
+      if (!roundId) throw new Error("roundId is required");
+      if (!userId) throw new Error("userId is required");
+      if (req.user?.type === "USER") {
+        throw new Error("unauthorized");
+      }
 
       let dbUser;
       if (req.user?.type === "INTERVIEWER") {
@@ -24,30 +28,38 @@ class InterviewController {
           where: { id: userId },
         });
       }
-      const dbRoundCandidate = await prismaClient.roundCandidate.findUnique({
-        where: { id: roundCandidateId as string },
+      if (!dbUser) throw new Error("db user not found");
+
+      const dbRound = await prismaClient.interviewSuiteRound.findUnique({
+        where: { id: roundId as string },
       });
 
-      if (!dbRoundCandidate) throw new Error("round candidate not found");
+      if (!dbRound) throw new Error("dbRound not found");
 
-      const dbInterview = await prismaClient.interview.findUnique({
-        where: {
-          roundCandidateId: dbRoundCandidate.id,
-        },
+      const dbRoundCandidates = await prismaClient.roundCandidate.findMany({
+        where: { id: { in: interviewCandidates } },
       });
 
-      if (dbInterview) throw new Error("interview already exists");
+      if (dbRoundCandidates.length !== interviewCandidates.length) {
+        throw new Error("Invalid data sent");
+      }
 
-      await prismaClient.interview.create({
-        data: {
-          roundCandidateId: dbRoundCandidate.id,
-          interviewRoundId: dbRoundCandidate.roundId,
-          createdBy: dbUser?.id,
+      const mappedData = dbRoundCandidates.map((candidate) => {
+        return {
+          interviewRoundId: dbRound.id,
+          createdBy: dbUser.id,
+          roundCandidateId: candidate.id,
           slug: generateSlug(),
-        },
+        };
       });
 
-      return res.status(200).json(apiResponse(200, "interview created", null));
+      const dbInterview = await prismaClient.interview.createMany({
+        data: mappedData,
+      });
+
+      return res
+        .status(200)
+        .json(apiResponse(200, "interview created", dbInterview));
     } catch (error: any) {
       console.log(error);
       return res.status(200).json(apiResponse(500, error.message, null));
@@ -62,15 +74,40 @@ class InterviewController {
       if (!userId) throw new Error("userId not found");
       if (req.user?.type === "USER") throw new Error("unauthorized");
 
-      const dbRound = await prismaClient.roundCandidate.findMany({
+      const dbRound = await prismaClient.interviewSuiteRound.findUnique({
         where: {
-          roundId: roundId as string,
+          id: roundId as string,
+        },
+      });
+
+      if (!dbRound) throw new Error("db Round not found!");
+
+      const dbInterview = await prismaClient.interview.findMany({
+        where: {
+          interviewRoundId: dbRound.id,
+        },
+        select: {
+          slug: true,
+          id: true,
+          roundCandidate: {
+            select: {
+              candidate: {
+                select: {
+                  name: true,
+                  username: true,
+                  email: true,
+                  profileUrl: true,
+                },
+              },
+            },
+          },
+          interviewStatus: true,
         },
       });
 
       return res
         .status(200)
-        .json(apiResponse(200, "interview Round fetched", dbRound));
+        .json(apiResponse(200, "interview Round fetched", dbInterview));
     } catch (error: any) {
       console.log(error);
       return res.status(200).json(apiResponse(500, error.message, null));
@@ -167,6 +204,30 @@ class InterviewController {
       // TODO: create a pod connection and store this in redis
       // key as slug and content - namespace,pod and ingressName
       // alng with this start the meeting
+      const interviewId = req.params.id;
+      const userId = req.user?.id;
+
+      if (!interviewId) throw new Error("InterviewId not found");
+      if (!userId) throw new Error("userId not found");
+
+      const dbInterview = await prismaClient.interview.findUnique({
+        where: { id: interviewId as string },
+      });
+
+      if (!dbInterview) throw new Error("no such interview found");
+
+      const updatedInterview = await prismaClient.interview.update({
+        where: {
+          id: dbInterview.id,
+        },
+        data: {
+          interviewStatus: "UNDER_PROGRESS",
+        },
+      });
+
+      return res
+        .status(200)
+        .json(apiResponse(200, "interview started", updatedInterview));
     } catch (error: any) {
       console.log(error);
       return res.status(200).json(apiResponse(500, error.message, null));
@@ -215,6 +276,30 @@ class InterviewController {
   }
   async endInterview(req: Request, res: Response) {
     try {
+      const interviewId = req.params.id;
+      const userId = req.user?.id;
+
+      if (!interviewId) throw new Error("InterviewId not found");
+      if (!userId) throw new Error("userId not found");
+
+      const dbInterview = await prismaClient.interview.findUnique({
+        where: { id: interviewId as string },
+      });
+
+      if (!dbInterview) throw new Error("no such interview found");
+
+      const updatedInterview = await prismaClient.interview.update({
+        where: {
+          id: dbInterview.id,
+        },
+        data: {
+          interviewStatus: "COMPLETED",
+        },
+      });
+
+      return res
+        .status(200)
+        .json(apiResponse(200, "interview completed", updatedInterview));
     } catch (error: any) {
       console.log(error);
       return res.status(200).json(apiResponse(500, error.message, null));

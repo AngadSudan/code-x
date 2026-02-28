@@ -73,12 +73,12 @@ export interface updateExperience {
 }
 
 export interface updateUserLinks {
-  githubUrl?: string,
-  linkedinUrl?: string,
-  leetcodeUrl?: string,
-  codeForcesUrl?: string,
-  mediumUrl?: string,
-  portfolioUrl?: string,
+  githubUrl?: string;
+  linkedinUrl?: string;
+  leetcodeUrl?: string;
+  codeForcesUrl?: string;
+  mediumUrl?: string;
+  portfolioUrl?: string;
 }
 
 export interface updateOrganization {
@@ -169,4 +169,11 @@ export interface SuiteCreation {
   startDate: Date;
   endDate: Date;
   publishStatus: "NOT_PUBLISHED" | "PUBLISHED";
+}
+
+export interface UrlMapping {
+  mediumUrl: string;
+  leetcodeUrl: string;
+  githubUrl: string;
+  codeforcesUrl: string;
 }

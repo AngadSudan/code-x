@@ -1,4 +1,5 @@
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+import externalPlatformService from "./service/external-platform.service";
 import K8Service from "./service/k8s.service";
 import videoConfrencingService from "./service/videoConfrencing.service";
 import { podConfig, serviceConfig, ingressConfig } from "./utils/config";
@@ -75,11 +76,7 @@ const serviceInstance = new K8Service({
 //   }
 // }
 async function main() {
-  const data = await videoConfrencingService.createToken(
-    "random-abc-bittu",
-    "angad-sudan",
-    "host",
-  );
+  const data = await externalPlatformService.getLeetCodeInfo("angad_sudan");
 
   console.log(data);
 }

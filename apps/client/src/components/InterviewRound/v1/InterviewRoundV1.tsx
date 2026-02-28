@@ -1,7 +1,7 @@
 import { useSearchParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import RoundSidebar from "./RoundSidebar";
-import Candidates from "./Candidates";
+import Candidates, { Candidate } from "./Candidates";
 import Interviews from "./Interviews";
 import axiosInstance from "@/utils/axiosInstance";
 import toast from "react-hot-toast";
@@ -20,6 +20,7 @@ function InterviewRoundV1({ id }: { id: string }) {
   const [interviewForm, showInterviewForm] = useState<boolean>(false);
   const [tab, setTab] = useState(query.get("tab") || "candidates");
   const [candidates, setCandidate] = useState([]);
+  const [leftOutCandidates, setLeftOutCandidates] = useState([]);
   const [interviews, setInterviews] = useState([]);
 
   const [candidateFilter, setCandidateFilter] = useState<{
@@ -68,7 +69,7 @@ function InterviewRoundV1({ id }: { id: string }) {
   const fetchInterviews = async () => {
     try {
       const res = await axiosInstance.get(
-        "/api/v1/interview/interview-suite/round/candidate/" + id,
+        "/api/v1/interview/interview-suite/interview/get-all/" + id,
       );
       if (res.data.statusCode > 200) throw new Error(res.data.message);
 
@@ -79,32 +80,96 @@ function InterviewRoundV1({ id }: { id: string }) {
   };
   const handleDelete = async () => {};
   const handleUpdate = async (data: any) => {};
-  const handleInterviewCreation = async (data: any) => {};
+  const handleInterviewCreation = async (data: any) => {
+    try {
+      const res = await axiosInstance.post(
+        "/api/v1/interview/interview-suite/interview/create/" + id,
+        {
+          candidates: data,
+        },
+      );
+      if (res.data.statusCode > 200) throw new Error(res.data.message);
+
+      await fetchInterviews();
+      toast.success(`${res.data.data.count} interview created`);
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
   useEffect(() => {
     let data = [...candidates];
-    if (data.length === 0) return;
 
-    if (candidateFilter.name.trim().length !== 0) {
-      //TODO: implement filtering
+    if (data.length === 0) {
+      setFilterCandidates([]);
+      setLeftOutCandidates([]);
+      return;
     }
+
+    //@ts-ignore
+    const leftCandidate = data.filter((item) => item.roundStatus === "PENDING");
+
+    setLeftOutCandidates(leftCandidate);
+
+    if (candidateFilter.name.trim()) {
+      const search = candidateFilter.name.toLowerCase();
+
+      data = data.filter(
+        (item) =>
+          //@ts-ignore
+          item.candidate.name.toLowerCase().includes(search) ||
+          //@ts-ignore
+          item.candidate.username.toLowerCase().includes(search) ||
+          //@ts-ignore
+          item.candidate.email.toLowerCase().includes(search),
+      );
+    }
+
+    if (candidateFilter.status !== "ALL") {
+      //@ts-ignore
+      data = data.filter((item) => item.roundStatus === candidateFilter.status);
+    }
+
     setFilterCandidates(data);
   }, [candidates, candidateFilter]);
   useEffect(() => {
     let data = [...interviews];
+    console.log(data);
     if (data.length === 0) return;
 
-    if (candidateFilter.name.trim().length !== 0) {
-      //TODO: implement filtering
+    if (interviewFilter.name.trim()) {
+      const search = interviewFilter.name.toLowerCase();
+
+      data = data.filter(
+        (item) =>
+          //@ts-ignore
+          item.roundCandidate.candidate.name.toLowerCase().includes(search) ||
+          //@ts-ignore
+          item.roundCandidate.candidate.username
+            .toLowerCase()
+            .includes(search) ||
+          //@ts-ignore
+          item.roundCandidate.candidate.email.toLowerCase().includes(search),
+      );
     }
-    setFilterCandidates(data);
+
+    if (interviewFilter.status !== "ALL") {
+      data = data.filter(
+        //@ts-ignore
+        (item) => item.interviewStatus === interviewFilter.status,
+      );
+    }
+
+    setFilterInterviews(data);
   }, [interviews, interviewFilter]);
   useEffect(() => {
     fetchInfo();
   }, []);
   useEffect(() => {
     if (tab === "interviews") {
+      console.log("calling intervews api");
       fetchInterviews();
     } else {
+      console.log("calling candidates api");
       fetchCandidates();
     }
   }, [tab]);
@@ -114,16 +179,7 @@ function InterviewRoundV1({ id }: { id: string }) {
         <InterviewCreationFrom
           onClose={() => showInterviewForm(false)}
           onSubmit={(data) => handleInterviewCreation(data)}
-          candidates={[
-            {
-              id: "cand_001",
-              name: "Aarav Sharma",
-              username: "aarav.dev",
-              email: "aarav.sharma@example.com",
-              profileUrl: "https://randomuser.me/api/portraits/men/32.jpg",
-              headline: "Full Stack Developer | MERN",
-            },
-          ]}
+          candidates={leftOutCandidates}
         />
       )}
       <aside className="w-90 min-w-90 max-w-90 h-full shrink-0">
@@ -173,7 +229,7 @@ function InterviewRoundV1({ id }: { id: string }) {
               filter={candidateFilter}
               setFilter={setCandidateFilter}
             />
-            <Candidates data={filteredCandidates} />
+            <Candidates id={id} data={filteredCandidates} />
           </>
         )}
         {tab === "interviews" && (

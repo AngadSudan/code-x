@@ -3,6 +3,7 @@ import apiResponse from "../utils/apiResponse";
 import prismaClient from "../utils/prisma";
 import * as InterviewTypes from "../utils/type";
 import cacheClient from "../utils/redis";
+import externalPlatformService from "../service/external-platform.service";
 
 const MAX_PAGE_SIZE = 100;
 class InterviewSuiteController {
@@ -676,6 +677,98 @@ class InterviewSuiteController {
       return res.status(200).json(apiResponse(500, error.message, null));
     }
   }
+  async getApplicationById(req: Request, res: Response) {
+    try {
+      const applicationId = req.params.id;
+      const userId = req.user?.id;
+
+      if (!applicationId) throw new Error("applicationId not found");
+      if (!userId) throw new Error("userId not found");
+      if (req.user?.type === "USER") throw new Error("unauthorized");
+
+      let dbUser;
+      if (req.user?.type === "INTERVIEWER") {
+        dbUser = await prismaClient.interviewer.findUnique({
+          where: { id: applicationId as string },
+        });
+      } else {
+        dbUser = await prismaClient.organization.findUnique({
+          where: { id: applicationId as string },
+        });
+      }
+
+      const dbApplication = await prismaClient.jobApplication.findUnique({
+        where: {
+          id: applicationId as string,
+        },
+      });
+      if (!dbApplication) throw new Error("Job application not found");
+
+      const dbCandidate = await prismaClient.user.findUnique({
+        where: { id: dbApplication.candidateId },
+        include: {
+          userExperiences: true,
+        },
+      });
+
+      if (!dbCandidate) throw new Error("failed to fetch Information");
+
+      return res.status(200).json(
+        apiResponse(200, "application Fetched", {
+          userInfo: dbCandidate,
+          application: dbApplication,
+        }),
+      );
+    } catch (error: any) {
+      console.log(error);
+      return res.status(200).json(apiResponse(500, error.message, null));
+    }
+  }
+  async getPlatformInformation(req: Request, res: Response) {
+    try {
+      const { url }: { url: InterviewTypes.UrlMapping } = req.body;
+
+      let leetcodeUrl: any = url.leetcodeUrl.split("/");
+      leetcodeUrl =
+        leetcodeUrl[leetcodeUrl.length - 1] ||
+        leetcodeUrl[leetcodeUrl.length - 2];
+      let leetCodeObject;
+      if (leetcodeUrl) {
+        leetCodeObject =
+          await externalPlatformService.getLeetCodeInfo(leetcodeUrl);
+      }
+
+      let githubUrl: any = url.githubUrl.split("/");
+      githubUrl =
+        githubUrl[githubUrl.length - 1] || githubUrl[githubUrl.length - 2];
+
+      let githubObject;
+      if (githubUrl) {
+        githubObject = await externalPlatformService.getGithubInfo(githubUrl);
+      }
+
+      let codeforcesUrl: any = url.codeforcesUrl.split("/");
+      codeforcesUrl =
+        codeforcesUrl[codeforcesUrl.length - 1] ||
+        codeforcesUrl[codeforcesUrl.length - 2];
+      let codeforcesObject;
+      if (codeforcesUrl) {
+        codeforcesObject =
+          await externalPlatformService.getCodeForcesInfo(codeforcesUrl);
+      }
+
+      return res.status(200).json(
+        apiResponse(200, "platform data extracted", {
+          leetcode: leetCodeObject,
+          github: githubObject,
+          codeforces: codeforcesObject,
+        }),
+      );
+    } catch (error: any) {
+      console.log(error);
+      return res.status(200).json(apiResponse(500, error.message, null));
+    }
+  }
   async selectApplicaton(req: Request, res: Response) {
     try {
       const userId = req.user?.id;
@@ -723,6 +816,15 @@ class InterviewSuiteController {
       if (!dbRound || dbRound.length === 0) throw new Error("no valid round");
 
       //TODO: create the round candidate
+      const dbCanidate = await prismaClient.roundCandidate.findFirst({
+        where: {
+          candidateId: dbJobApplication.candidateId,
+          roundId: dbRound[0]?.id!,
+        },
+      });
+
+      if (dbCanidate) throw new Error("candidate already accepted");
+
       const createdCandidate = await prismaClient.roundCandidate.create({
         data: {
           candidateId: dbJobApplication.candidateId,
@@ -781,7 +883,19 @@ class InterviewSuiteController {
       if (!dbJobApplication) throw new Error("job listing not found");
 
       //TODO: create the round candidate
+      const roundCandidate = await prismaClient.roundCandidate.findFirst({
+        where: {
+          candidateId: dbJobApplication.candidateId,
+        },
+      });
 
+      if (roundCandidate) {
+        await prismaClient.roundCandidate.delete({
+          where: {
+            id: roundCandidate.id,
+          },
+        });
+      }
       const updatedStatus = await prismaClient.jobApplication.update({
         where: { id: dbJobApplication.id },
         data: {
@@ -890,9 +1004,23 @@ class InterviewSuiteController {
       //       ),
       //     );
       // }
-
+      console.log(dbRound.id);
       const data = await prismaClient.roundCandidate.findMany({
         where: { roundId: dbRound.id },
+        select: {
+          id: true,
+          roundStatus: true,
+          candidate: {
+            select: {
+              id: true,
+              name: true,
+              username: true,
+              email: true,
+              resume: true,
+              profileUrl: true,
+            },
+          },
+        },
         take: MAX_PAGE_SIZE,
         skip: MAX_PAGE_SIZE * pageNumber,
       });
@@ -910,43 +1038,14 @@ class InterviewSuiteController {
       return res.status(200).json(apiResponse(500, error.message, null));
     }
   }
-  async rejectCandidate(req: Request, res: Response) {
+  async handleRoundStatusChange(req: Request, res: Response) {
     try {
-      const candidateId = req.params.id;
-      const userId = req.user?.id;
-
-      if (!candidateId) throw new Error("candidate record not found");
-      if (!userId) throw new Error("userId is required");
-
-      const dbCandidateRecord = await prismaClient.roundCandidate.findUnique({
-        where: { id: candidateId as string },
-      });
-      if (!dbCandidateRecord) throw new Error("no round candidate found");
-
-      const data = await prismaClient.roundCandidate.update({
-        where: {
-          id: dbCandidateRecord.id,
-        },
-        data: {
-          roundStatus: "REJECTED",
-        },
-      });
-
-      return res.status(200).json(apiResponse(200, "rejected candidate", data));
-    } catch (error: any) {
-      console.log(error);
-      return res.status(200).json(apiResponse(500, error.message, null));
-    }
-  }
-  async selectCandidatesForNextRound(req: Request, res: Response) {
-    try {
-      //TODO: take the previous roundID and move them to next round
       const currentRoundId = req.params.id;
-      const nextRoundId = req.body.roundId;
+      const roundCandidateId = req.params.candidateId;
+      const updatedStatus = req.body.status;
       const userId = req.user?.id;
 
       if (!currentRoundId) throw new Error("roundId not found");
-      if (!nextRoundId) throw new Error("nextRoundId not found");
       if (req.user?.type === "USER") throw new Error("unauthorized");
 
       let dbUser;
@@ -960,36 +1059,84 @@ class InterviewSuiteController {
         });
       }
 
-      const nextRound = await prismaClient.interviewSuiteRound.findUnique({
-        where: { id: nextRoundId },
+      const dbRoundCandidate = await prismaClient.roundCandidate.findUnique({
+        where: { id: roundCandidateId as string },
       });
-      if (!nextRound) throw new Error("invalid next round");
+      console.log(dbRoundCandidate);
+      if (!dbRoundCandidate) throw new Error("candidate round not found");
 
       const dbCurrentRound = await prismaClient.interviewSuiteRound.findUnique({
         where: { id: currentRoundId as string },
       });
+      console.log(dbCurrentRound);
       if (!dbCurrentRound) throw new Error("invalid current round");
 
-      let data = await prismaClient.roundCandidate.findMany({
-        where: {
-          roundId: dbCurrentRound.id,
-          roundStatus: "SELECTED_FOR_NEXT",
-        },
+      const dbRound = await prismaClient.interviewSuiteRound.findMany({
+        where: { suiteId: dbCurrentRound.suiteId },
+        select: { id: true },
       });
+      if (updatedStatus === "SELECTED_FOR_NEXT") {
+        let nextRound;
+        for (let i = 0; i < dbRound.length; i++) {
+          if (dbRound[i]?.id === dbCurrentRound.id && i !== dbRound.length) {
+            nextRound = dbRound[i + 1]?.id;
+          }
+        }
 
-      data = data.map((round) => {
-        return { ...round, roundStatus: "PENDING", roundId: nextRound.id };
-      });
+        if (!nextRound) {
+          const updatedData = await prismaClient.roundCandidate.update({
+            where: { id: dbRoundCandidate.id },
+            data: {
+              roundStatus: "ACCEPTED",
+            },
+          });
 
-      const selectedCandidates = await prismaClient.roundCandidate.createMany({
-        data: data,
-      });
+          console.log(updatedData);
 
-      if (!selectedCandidates) throw new Error("failed to select candidates");
+          return res
+            .status(200)
+            .json(apiResponse(200, "selected for job", updatedData));
+        }
 
-      return res
-        .status(200)
-        .json(apiResponse(200, "candidates selected", selectedCandidates));
+        const data = await prismaClient.roundCandidate.create({
+          data: {
+            candidateId: dbRoundCandidate.candidateId,
+            roundId: nextRound,
+          },
+        });
+
+        await prismaClient.roundCandidate.update({
+          where: { id: dbRoundCandidate.id },
+          data: {
+            roundStatus: "SELECTED_FOR_NEXT",
+          },
+        });
+        return res
+          .status(200)
+          .json(apiResponse(200, "candidates selected", data));
+      } else if (updatedStatus === "REJECTED") {
+        const updatedData = await prismaClient.roundCandidate.update({
+          where: { id: dbRoundCandidate.id },
+          data: {
+            roundStatus: "REJECTED",
+          },
+        });
+
+        return res
+          .status(200)
+          .json(apiResponse(200, "candidates rejected", updatedData));
+      } else {
+        const updatedData = await prismaClient.roundCandidate.update({
+          where: { id: dbRoundCandidate.id },
+          data: {
+            roundStatus: "PENDING",
+          },
+        });
+
+        return res
+          .status(200)
+          .json(apiResponse(200, "candidates pending", updatedData));
+      }
     } catch (error: any) {
       console.log(error);
       return res.status(200).json(apiResponse(500, error.message, null));

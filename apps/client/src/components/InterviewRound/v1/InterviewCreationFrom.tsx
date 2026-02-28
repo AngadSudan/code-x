@@ -4,11 +4,14 @@ import { useColors } from "@/components/General/(Color Manager)/useColors";
 
 interface Candidate {
   id: string;
-  name: string;
-  username?: string;
-  headline?: string;
-  email?: string;
-  profileUrl?: string;
+  candidate: {
+    name: string;
+    username?: string;
+    headline?: string;
+    email?: string;
+    profileUrl?: string;
+  };
+  roundStatus: string;
 }
 
 interface fnHandler {
@@ -26,7 +29,7 @@ function InterviewCreationForm({ candidates, onClose, onSubmit }: fnHandler) {
   /* ================= Search Filter ================= */
   const filteredCandidates = useMemo(() => {
     return candidates.filter((c) =>
-      `${c.name} ${c.username ?? ""} ${c.email ?? ""}`
+      `${c.candidate.name} ${c.candidate.username ?? ""} ${c.candidate.email ?? ""}`
         .toLowerCase()
         .includes(search.toLowerCase()),
     );
@@ -80,7 +83,6 @@ function InterviewCreationForm({ candidates, onClose, onSubmit }: fnHandler) {
         <div className="overflow-y-auto max-h-75 space-y-2 pr-1">
           {filteredCandidates.map((c) => {
             const isSelected = selectedIds.includes(c.id);
-
             return (
               <div
                 key={c.id}
@@ -94,16 +96,17 @@ function InterviewCreationForm({ candidates, onClose, onSubmit }: fnHandler) {
               >
                 <img
                   src={
-                    c.profileUrl || "https://ui-avatars.com/api/?name=" + c.name
+                    c.candidate.profileUrl ||
+                    "https://ui-avatars.com/api/?name=" + c.candidate.name
                   }
-                  alt={c.name}
+                  alt={c.candidate.name}
                   className="w-9 h-9 rounded-full object-cover"
                 />
 
                 <div className="flex-1">
-                  <p className="text-sm font-medium">{c.name}</p>
+                  <p className="text-sm font-medium">{c.candidate.name}</p>
                   <p className="text-xs opacity-70">
-                    @{c.username} • {c.email}
+                    @{c.candidate.username} • {c.candidate.email}
                   </p>
                 </div>
 
