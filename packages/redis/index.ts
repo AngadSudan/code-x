@@ -29,7 +29,11 @@ class RedisClient implements RedisClientInterface {
     try {
       await this.client.connect();
       this.isConnected = true;
-      await this.client.bf.reserve("usersBloom", 0.01, 10000);
+      const exists = await this.client.exists("usersBloom");
+
+      if (!exists) {
+        await this.client.bf.reserve("usersBloom", 0.01, 10000);
+      }
     } catch (error: any) {
       console.log("Redis connection error: ", error);
       process.exit(1);
