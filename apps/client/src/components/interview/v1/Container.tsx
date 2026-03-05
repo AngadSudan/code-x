@@ -8,6 +8,7 @@ interface fnHandler {
   fileSystem?: Object;
   openFile?: string[];
   socket?: any;
+  track?: any;
 }
 
 export default function Container(prop: fnHandler) {
@@ -19,11 +20,7 @@ export default function Container(prop: fnHandler) {
         className={`h-full w-full rounded-3xl ${colors.background.secondary} ${colors.border.fadedThin}`}
       >
         {prop.isHost ? (
-          <CustomEditor
-            fileSystem={prop.fileSystem ?? {}}
-            openFile={prop.openFile ?? []}
-            socket={prop.socket ?? null}
-          />
+          <CustomEditor videoStream={prop.track} />
         ) : (
           <iframe className="h-full w-full" src={prop.containerURL}></iframe>
         )}

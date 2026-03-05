@@ -14,6 +14,12 @@ import {
 import { useEffect, useState } from "react";
 import { useColors } from "@/components/General/(Color Manager)/useColors";
 
+import AgoraRTC, {
+  IAgoraRTCRemoteUser,
+  ICameraVideoTrack,
+  IMicrophoneAudioTrack,
+  ILocalVideoTrack,
+} from "agora-rtc-sdk-ng";
 interface Props {
   appId: string;
   channelName: string;
@@ -27,9 +33,13 @@ export default function HandleRTCVideos(props: Props) {
   const { localCameraTrack } = useLocalCameraTrack(true);
   const { localMicrophoneTrack } = useLocalMicrophoneTrack(true);
 
+  const [remoteUsers, setRemoteUsers] = useState<IAgoraRTCRemoteUser[]>([]);
+  const [localCameraTrack, setLocalCameraTrack] = useState<ICameraVideoTrack>();
+  const [localMicTrack, setLocalMicTrack] = useState<IMicrophoneAudioTrack>();
+  const [screenTrack, setScreenTrack] = useState<ILocalVideoTrack | null>(null);
+
   const [isMuted, setIsMuted] = useState(false);
   const [isCameraOff, setIsCameraOff] = useState(false);
-
   useJoin({
     appid: props.appId,
     channel: props.channelName,
@@ -43,6 +53,25 @@ export default function HandleRTCVideos(props: Props) {
       : [],
   );
 
+  useEffect(() => {
+    const init = async () => {
+      await client.join(props.appId, props.channelName, props.token, props.uid);
+
+      const camTrack = await AgoraRTC.createCameraVideoTrack();
+      const micTrack = await AgoraRTC.createMicrophoneAudioTrack();
+
+      setLocalCameraTrack(camTrack);
+      setLocalMicTrack(micTrack);
+
+      await client.publish([camTrack, micTrack]);
+    };
+
+    init();
+
+    return () => {
+      client.leave();
+    };
+  }, []);
   const remoteUsers = useRemoteUsers();
   const { audioTracks } = useRemoteAudioTracks(remoteUsers);
 
