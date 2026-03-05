@@ -8,6 +8,9 @@ import type {
   updateUserLinks,
 } from "../utils/type";
 import cloudinaryService from "../service/Cloudinary.service";
+import GithubService from "../service/github.service";
+import aiService from "../service/ai.service";
+import { parse } from "yaml";
 
 class UserController {
   async updateUserInfo(req: Request, res: Response) {
@@ -320,9 +323,7 @@ class UserController {
           ? data.isOngoing
           : undefined;
 
-      const startDate = data.startDate
-        ? new Date(data.startDate)
-        : undefined;
+      const startDate = data.startDate ? new Date(data.startDate) : undefined;
       if (startDate && Number.isNaN(startDate.getTime())) {
         throw new Error("Invalid start date");
       }
@@ -533,6 +534,112 @@ class UserController {
       return res
         .status(200)
         .json(apiResponse(200, "Platform Links updated", updatedPlatformLinks));
+    } catch (error: any) {
+      console.log(error);
+      return res.status(200).json(apiResponse(500, error.message, null));
+    }
+  }
+  async getGithubDashboardInsights(req: Request, res: Response) {
+    try {
+      const userId = req.user?.id;
+      if (!userId) throw new Error("userId not found");
+      const dbUser = await prismaClient.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!dbUser) throw new Error("db user not found");
+      if (!dbUser.githubToken)
+        throw new Error("pleases Connect with github first");
+
+      const gitClient = new GithubService(dbUser.githubToken);
+      const getAllRepos = await gitClient.getAllReposName();
+      if (getAllRepos?.length === 0) throw new Error("no github data");
+
+      let repoPromises = [];
+      for (let i = 0; i < getAllRepos?.length; i++) {
+        const repo = getAllRepos[i];
+        repoPromises.push(
+          //@ts-ignore
+          gitClient.getAllRepoTopicAndLang(repo?.name, repo?.owner),
+        );
+      }
+
+      const repoData = await Promise.all(repoPromises);
+      let tech: Set<string> = new Set();
+      for (let i = 0; i < repoData.length; i++) {
+        const currentTags = repoData[i]?.tags;
+        const currentLanguages = Object.keys(repoData[i]?.languages || {});
+
+        //@ts-ignore
+        currentTags?.forEach((tag) => tech.add(tag));
+        currentLanguages.forEach((lang) => tech.add(lang));
+      }
+
+      tech = new Set(tech);
+      console.log(Array.from(tech));
+
+      const response = await aiService.getClassification(Array.from(tech));
+      const processing = {
+        frontend: 0,
+        backend: 0,
+        devops: 0,
+        systemDesign: 0,
+        tools: 0,
+      };
+
+      const jsonData = parse(response);
+
+      processing.frontend =
+        Math.round((Number(jsonData.FRONTEND) || 0) / tech.size) * 100;
+      processing.backend =
+        Math.round((Number(jsonData.BACKEND) || 0) / tech.size) * 100;
+      processing.devops =
+        Math.round((Number(jsonData.DEVOPS) || 0) / tech.size) * 100;
+      processing.systemDesign =
+        Math.round((Number(jsonData.SYSTEM_DESIGN) || 0) / tech.size) * 100;
+      processing.tools =
+        Math.round((Number(jsonData.PROGRAMMING) || 0) / tech.size) * 100;
+
+      const dbGraph = await prismaClient.developerGraph.findFirst({
+        where: { userId: dbUser.id },
+      });
+
+      let data;
+      if (!dbGraph) {
+        data = await prismaClient.developerGraph.create({
+          data: {
+            userId: dbUser.id,
+            frontend: processing.frontend,
+            backend: processing.backend,
+            devops: processing.devops,
+            systemDesign: processing.systemDesign,
+            tools: processing.tools,
+          },
+        });
+      } else {
+        data = await prismaClient.developerGraph.update({
+          where: {
+            id: dbUser.id,
+          },
+          data: {
+            frontend:
+              processing.frontend === 0
+                ? dbGraph.frontend
+                : processing.frontend,
+            backend:
+              processing.backend === 0 ? dbGraph.backend : processing.backend,
+            devops:
+              processing.devops === 0 ? dbGraph.devops : processing.devops,
+            systemDesign:
+              processing.systemDesign === 0
+                ? dbGraph.systemDesign
+                : processing.systemDesign,
+            tools: processing.tools === 0 ? dbGraph.tools : processing.tools,
+          },
+        });
+      }
+
+      return res.status(200).json(apiResponse(200, "graph generated", data));
     } catch (error: any) {
       console.log(error);
       return res.status(200).json(apiResponse(500, error.message, null));

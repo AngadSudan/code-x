@@ -26,6 +26,7 @@
   "dependencies": {
     "@codex/prisma": "*",
     "@codex/redis": "*",
+    "@google/genai": "^1.44.0",
     "@kubernetes/client-node": "^1.4.0",
     "@socket.io/redis-adapter": "^8.3.0",
     "agora-access-token": "^2.0.4",
@@ -46,6 +47,7 @@
     "morgan": "^1.10.1",
     "multer": "^2.0.2",
     "nodemailer": "^7.0.12",
+    "octokit": "^5.0.5",
     "piston-client": "^1.0.2",
     "redis": "^5.11.0",
     "socket.io": "^4.8.3",
