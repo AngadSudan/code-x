@@ -3,6 +3,7 @@ import ProjectList from "./ProjectList";
 import { useColors } from "@/components/General/(Color Manager)/useColors";
 import Experience from "./Experience";
 import IndividualActivity from "./IndivisualActivity";
+import JobList from "./ProjectList";
 
 export default function BottomSection() {
   const Colors = useColors();
