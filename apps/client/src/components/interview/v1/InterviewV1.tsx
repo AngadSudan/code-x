@@ -10,6 +10,7 @@ import StartInterview from "./StartInterview";
 import JoinInterview from "./JoinInterview";
 import { useUserStore } from "@/store/user-store";
 import { useEffect, useState } from "react";
+import AgoraRTC, { AgoraRTCProvider, useRTCClient } from "agora-rtc-react";
 
 function InterviewV1() {
   const param = useParams<{ id: string }>();
@@ -18,7 +19,9 @@ function InterviewV1() {
   const pathname = usePathname();
 
   const [storedId, setStoredId] = useState<string | null>(null);
-
+  const client = useRTCClient(
+    AgoraRTC.createClient({ codec: "vp8", mode: "rtc" }),
+  );
   useEffect(() => {
     const id = query.get("id");
 
@@ -40,9 +43,19 @@ function InterviewV1() {
   if (!interviewerLoading && !userLoading) return <Loading />;
   if (interviewerInfo)
     return (
-      <StartInterview param={param} userData={interviewerInfo} isHost={true} />
+      <AgoraRTCProvider client={client}>
+        <StartInterview
+          param={param}
+          userData={interviewerInfo}
+          isHost={true}
+        />
+      </AgoraRTCProvider>
     );
-  return <JoinInterview param={param} userData={userInfo} isHost={false} />;
+  return (
+    <AgoraRTCProvider client={client}>
+      <JoinInterview param={param} userData={userInfo} isHost={false} />;
+    </AgoraRTCProvider>
+  );
 }
 
 export default InterviewV1;

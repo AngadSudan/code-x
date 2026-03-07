@@ -1,6 +1,7 @@
+"use client";
 import { useColors } from "@/components/General/(Color Manager)/useColors";
-import { RemoteUser } from "agora-rtc-react";
-import { useEffect, useRef } from "react";
+import { RemoteUser, useRemoteUsers } from "agora-rtc-react";
+import { useEffect, useMemo, useRef } from "react";
 
 interface fnHandler {
   videoStream: any;
@@ -9,12 +10,9 @@ interface fnHandler {
 function CustomEditor(prop: fnHandler) {
   const colors = useColors();
   const videoRef = useRef<HTMLDivElement | null>(null);
+  const remoteUsers = useRemoteUsers();
 
-  useEffect(() => {
-    console.log(prop.videoStream)
-  }, [prop.videoStream]);
-
-  if (!prop.videoStream) {
+  if (remoteUsers.length === 0) {
     return (
       <div
         className={`
@@ -40,9 +38,7 @@ function CustomEditor(prop: fnHandler) {
         rounded-md
       `}
     >
-      {
-        JSON.stringify(prop.videoStream)
-      }
+      <RemoteUser user={remoteUsers[0]} />
       {/* <div ref={videoRef} className="h-full w-full [&>video]:object-contain" /> */}
     </div>
   );

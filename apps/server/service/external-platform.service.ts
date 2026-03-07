@@ -9,77 +9,88 @@ import {
 class PlatformService {
   async getLeetCodeInfo(username: string) {
     try {
-      const refinedData = {};
+      const url = "https://leetcode.com/graphql";
 
-      const profileData = await axios.post(
-        "https://leetcode.com/graphql",
-        {
-          query: publicProfile,
-          variables: { username },
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        },
-      );
-      const questonProfile = await axios.post(
-        "https://leetcode.com/graphql",
-        {
-          query: questionProfile,
-          variables: { username },
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        },
-      );
-      const contestRating = await axios.post(
-        "https://leetcode.com/graphql",
-        {
-          query: userContestRating,
-          variables: { username },
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        },
-      );
-      const userBadges = await axios.post(
-        "https://leetcode.com/graphql",
-        {
-          query: Badges,
-          variables: { username },
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        },
-      );
-      const UserProfileCalender = await axios.post(
-        "https://leetcode.com/graphql",
-        {
-          query: profileCalender,
-          variables: { username },
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        },
-      );
+      const graphqlRequest = (query: string) =>
+        axios.post(
+          url,
+          { query, variables: { username } },
+          { headers: { "Content-Type": "application/json" } },
+        );
 
-      console.log(JSON.stringify(profileData.data, null, 2));
-      console.log(JSON.stringify(questonProfile.data, null, 2));
-      console.log(JSON.stringify(contestRating.data, null, 2));
-      console.log(JSON.stringify(userBadges.data, null, 2));
-      console.log(JSON.stringify(UserProfileCalender.data, null, 2));
+      const [profileRes, questionRes, contestRes, badgeRes, calendarRes] =
+        await Promise.all([
+          graphqlRequest(publicProfile),
+          graphqlRequest(questionProfile),
+          graphqlRequest(userContestRating),
+          graphqlRequest(Badges),
+          graphqlRequest(profileCalender),
+        ]);
+
+      const profile = profileRes.data?.data?.matchedUser;
+      const questions = questionRes.data?.data?.matchedUser;
+      const contests = contestRes.data?.data;
+      const badges = badgeRes.data?.data?.matchedUser;
+      const calendar = calendarRes.data?.data?.matchedUser?.userCalendar;
+
+      const refinedData = {
+        user: {
+          username: profile?.username,
+          realName: profile?.profile?.realName,
+          avatar: profile?.profile?.userAvatar,
+          ranking: profile?.profile?.ranking,
+          reputation: profile?.profile?.reputation,
+          certificationLevel: profile?.profile?.certificationLevel,
+        },
+
+        languagesSolved: Object.fromEntries(
+          (questions?.languageProblemCount || []).map((l: any) => [
+            l.languageName,
+            l.problemsSolved,
+          ]),
+        ),
+
+        contestStats: {
+          rating: contests?.userContestRanking?.rating,
+          attendedContests: contests?.userContestRanking?.attendedContestsCount,
+          globalRanking: contests?.userContestRanking?.globalRanking,
+          totalParticipants: contests?.userContestRanking?.totalParticipants,
+          topPercentage: contests?.userContestRanking?.topPercentage,
+        },
+
+        contestHistory: (contests?.userContestRankingHistory || []).map(
+          (c: any) => ({
+            contestName: c.contest.title,
+            problemsSolved: c.problemsSolved,
+            totalProblems: c.totalProblems,
+            ranking: c.ranking,
+            rating: c.rating,
+            trend: c.trendDirection,
+            finishTime: c.finishTimeInSeconds,
+          }),
+        ),
+
+        badges: (badges?.badges || []).map((b: any) => ({
+          name: b.displayName,
+          category: b.category,
+          date: b.creationDate,
+        })),
+
+        upcomingBadges: (badges?.upcomingBadges || []).map((b: any) => ({
+          name: b.name,
+          progress: b.progress,
+        })),
+
+        activity: {
+          activeYears: calendar?.activeYears || [],
+          streak: calendar?.streak || 0,
+          totalActiveDays: calendar?.totalActiveDays || 0,
+        },
+      };
+
       return refinedData;
     } catch (error: any) {
-      console.log(error);
+      console.error("LeetCode API Error:", error.message);
       return null;
     }
   }
