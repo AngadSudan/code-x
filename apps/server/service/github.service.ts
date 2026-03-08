@@ -13,15 +13,24 @@ class GithubService {
 
   async getAllReposName() {
     try {
-      const allRepositories =
-        await this.octokit.rest.repos.listForAuthenticatedUser();
+      const repos = await this.octokit.paginate(
+        this.octokit.rest.repos.listForAuthenticatedUser,
+        {
+          per_page: 100,
+          mediaType: {
+            previews: ["mercy"], // enables topics
+          },
+        },
+      );
 
-      let repo = allRepositories.data || [];
-      let filteredData = repo.map((repo) => {
-        return { name: repo.name, owner: repo.owner.login };
-      });
-      return filteredData || [];
-    } catch (error: any) {
+      const data = repos.map((repo: any) => ({
+        name: repo.name,
+        owner: repo.owner.login,
+        topics: repo.topics || [],
+      }));
+
+      return data;
+    } catch (error) {
       console.log(error);
       return [];
     }

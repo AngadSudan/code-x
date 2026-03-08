@@ -365,14 +365,12 @@ class AuthController {
       res.clearCookie("accessToken", {
         httpOnly: true,
         secure: false,
-        sameSite: "lax"
+        sameSite: "lax",
       });
 
       return res.json({ success: true });
     } catch (error: any) {
-      return res.status(200).json(
-        apiResponse(500, error.message, null)
-      );
+      return res.status(200).json(apiResponse(500, error.message, null));
     }
   }
 
@@ -393,6 +391,7 @@ class AuthController {
       data: {
         githubId,
         githubToken,
+        githubOAuth: true,
         githubAvatar: avatar,
       },
     });

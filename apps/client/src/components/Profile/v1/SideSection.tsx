@@ -12,6 +12,7 @@ import {
   Menu,
   Pencil,
   DoorOpen,
+  GitGraph,
 } from "lucide-react";
 
 import "./profile_styles.css";
@@ -23,6 +24,10 @@ import { useColors } from "@/components/General/(Color Manager)/useColors";
 import EditProfileModal from "./EditProfileModal";
 import KnowMoreProfileModal from "./KnowMoreProfileModal";
 import EditLinksModal, { updateUserLinks } from "./EditLinksModal";
+import Link from "next/link";
+import { SiCodeforces, SiLeetcode } from "react-icons/si";
+import { FaHospitalUser, FaMediumM } from "react-icons/fa";
+import axiosInstance from "@/utils/axiosInstance";
 
 type PlatformProps = {
   icon: ReactNode;
@@ -85,6 +90,7 @@ export default function SideSection() {
   const Colors = useColors();
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [reAnalyzeLoading, setReAnalyzeLoading] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -160,15 +166,16 @@ export default function SideSection() {
 
   async function handleLogout() {
     try {
-      const res = await fetch(`${backendUrl}/api/v1/auth/logout`,{
-        method:"GET",
-        credentials:"include",
+      const res = await fetch(`${backendUrl}/api/v1/auth/logout`, {
+        method: "GET",
+        credentials: "include",
       });
 
-      if(!res.ok){
+      if (!res.ok) {
         throw new Error("Logout Failed");
       }
 
+      localStorage.clear();
       toast.success("Logged Out SuccessFully !");
       router.replace("/");
     } catch (error) {
@@ -248,6 +255,20 @@ export default function SideSection() {
   const [editOpen, setEditOpen] = useState(false);
   const [knowMoreOpen, setKnowMoreOpen] = useState(false);
   const [editLinksOpen, setEditLinksOpen] = useState(false);
+  const handleReAnalyze = async () => {
+    try {
+      console.log("started analysis");
+      setReAnalyzeLoading(true);
+      const data = await axiosInstance.get(
+        "/api/v1/users/recalculate-git-graph",
+      );
+      console.log(data.data);
+      setReAnalyzeLoading(false);
+    } catch (error: any) {
+      toast.error(error);
+      console.log(error);
+    }
+  };
   return (
     <div
       className={`${Colors.background.secondary} w-full min-h-full p-4 flex flex-col justify-between rounded-xl font-mono gap-4`}
@@ -315,7 +336,6 @@ export default function SideSection() {
             </div>
           </div>
         </div>
-
         <div
           className={`${Colors.background.primary} rounded-xl px-4 py-3 flex items-center justify-between`}
         >
@@ -364,113 +384,236 @@ export default function SideSection() {
           </div>
         </div>
 
-        <div
-          className={`${Colors.background.primary} rounded-xl p-4 max-h-80 overflow-y-auto`}
-        >
-          <div className="flex items-center justify-between mb-2">
-            <p className={`${Colors.text.primary} text-2xl font-mono`}>
-              Other Platforms
+        <div className={`${Colors.background.primary} rounded-xl px-4 py-3`}>
+          <div className="flex items-center justify-between">
+            <p
+              className={`${Colors.text.primary} font-mono text-sm font-semibold`}
+            >
+              Other Platform Links
             </p>
             <button
-              type="button"
-              onClick={() => {
-                console.log("Edit platform links");
-                setEditLinksOpen(true);
-              }}
-              className={`${Colors.text.secondary} hover:${Colors.text.primary} transition p-1`}
-              aria-label="Edit platform links"
+              onClick={() => setEditLinksOpen(true)}
+              className={`${Colors.text.primary} ${Colors.hover.special} transition-opacity hover:opacity-70`}
             >
-              <Pencil
-                size={18}
-                className={`${Colors.properties.interactiveButton}`}
-              />
+              <Pencil size={18} />
             </button>
           </div>
-          <div className={`${Colors.border.defaultThinBottom} mb-3`} />
+        </div>
+        <div className="grid grid-cols-3 mx-auto place-items-center items-center gap-3 mt-3">
+          {data && data.linkedinUrl && (
+            <Link
+              href={data.linkedinUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`
+        ${Colors.text.primary}
+        ${Colors.border.defaultThin}
+        ${Colors.hover.special}
+        ${Colors.properties.interactiveButton}
+        w-10 h-10
+        flex items-center justify-center
+        rounded-full
+        transition-all
+      `}
+            >
+              <Linkedin size={18} />
+            </Link>
+          )}
 
-          {activePlatforms.length === 0 ? (
-            <p className={`${Colors.text.secondary} font-mono text-sm`}>
-              No platforms added yet
-            </p>
-          ) : (
-            activePlatforms.map(({ key, label, icon: Icon }) => (
-              <Platform
-                key={key}
-                icon={<Icon />}
-                label={label}
-                url={data![key] as string}
-              />
-            ))
+          {data && data.githubUrl && (
+            <Link
+              href={data.githubUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`
+        ${Colors.text.primary}
+        ${Colors.border.defaultThin}
+        ${Colors.hover.special}
+        ${Colors.properties.interactiveButton}
+        w-10 h-10
+        flex items-center justify-center
+        rounded-full
+      `}
+            >
+              <Github size={18} />
+            </Link>
+          )}
+
+          {data && data.leetcodeUrl && (
+            <Link
+              href={data.leetcodeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`
+        ${Colors.text.primary}
+        ${Colors.border.defaultThin}
+        ${Colors.hover.special}
+        ${Colors.properties.interactiveButton}
+        w-10 h-10
+        flex items-center justify-center
+        rounded-full
+      `}
+            >
+              <SiLeetcode size={18} />
+            </Link>
+          )}
+
+          {data && data.codeForcesUrl && (
+            <Link
+              href={data.codeForcesUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`
+        ${Colors.text.primary}
+        ${Colors.border.defaultThin}
+        ${Colors.hover.special}
+        ${Colors.properties.interactiveButton}
+        w-10 h-10
+        flex items-center justify-center
+        rounded-full
+      `}
+            >
+              <SiCodeforces size={18} />
+            </Link>
+          )}
+
+          {data && data.portfolioUrl && (
+            <Link
+              href={data.portfolioUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`
+        ${Colors.text.primary}
+        ${Colors.border.defaultThin}
+        ${Colors.hover.special}
+        ${Colors.properties.interactiveButton}
+        w-10 h-10
+        flex items-center justify-center
+        rounded-full
+      `}
+            >
+              <FaHospitalUser size={18} />
+            </Link>
+          )}
+
+          {data && data.mediumUrl && (
+            <Link
+              href={data.mediumUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`
+        ${Colors.text.primary}
+        ${Colors.border.defaultThin}
+        ${Colors.hover.special}
+        ${Colors.properties.interactiveButton}
+        w-10 h-10
+        flex items-center justify-center
+        rounded-full
+      `}
+            >
+              <FaMediumM size={18} />
+            </Link>
           )}
         </div>
       </div>
-
+      {data && data.githubOAuth ? (
+        <button
+          onClick={handleReAnalyze}
+          disabled={reAnalyzeLoading}
+          className={`
+        ${Colors.text.primary}
+        ${Colors.border.defaultThin}
+        ${Colors.hover.special}
+        ${Colors.properties.interactiveButton}
+        w-full h-10
+        flex items-center justify-center
+        rounded-full
+      `}
+        >
+          <GitGraph size={18} />
+          Analyze Git Profile
+        </button>
+      ) : (
+        <div className="flex justify-center items-center h-full w-full">
+          <Link
+            href={`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/auth/github`}
+            className={`flex gap-3 cursor-pointer p-2 ${Colors.background.special} ${Colors.text.inverted}`}
+          >
+            <Github />
+            Connect to Github
+          </Link>
+        </div>
+      )}
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-2">
           <ThemeSwitcher />
         </div>
 
-      {/* Bottom Buttons */}
-      <div className="flex gap-3">
-        <button
-        onClick={handleLogout}
-          className={`${Colors.background.special} ${Colors.properties.interactiveButton} flex-1 py-3 rounded-xl flex items-center justify-center`}
-        >
-          <DoorOpen className={`${Colors.text.inverted}`} /> <span className={`ml-2 ${Colors.text.inverted} font-semibold`} >Logout</span>
-        </button>
-        {/* <button
+        {/* Bottom Buttons */}
+
+        <div className="flex gap-3">
+          <button
+            onClick={handleLogout}
+            className={`${Colors.background.special} ${Colors.properties.interactiveButton} flex-1 py-3 rounded-xl flex items-center justify-center`}
+          >
+            <DoorOpen className={`${Colors.text.inverted}`} />{" "}
+            <span className={`ml-2 ${Colors.text.inverted} font-semibold`}>
+              Logout
+            </span>
+          </button>
+          {/* <button
           className={`${Colors.background.special} ${Colors.properties.interactiveButton} flex-1 py-3 rounded-xl flex items-center justify-center`}
         >
           <MessageSquare className={`${Colors.text.inverted}`} />
         </button> */}
-      </div>
+        </div>
 
-      {/* Edit profile Modal  */}
-      <EditProfileModal
-        isOpen={editOpen}
-        onClose={() => setEditOpen(false)}
-        onSave={(payload) => {
-          console.log(payload);
-          setEditOpen(false);
-        }}
-      />
+        {/* Edit profile Modal  */}
+        <EditProfileModal
+          isOpen={editOpen}
+          onClose={() => setEditOpen(false)}
+          onSave={(payload) => {
+            console.log(payload);
+            setEditOpen(false);
+          }}
+        />
 
-      {/* Know more Modal  */}
-      <KnowMoreProfileModal
-        isOpen={knowMoreOpen}
-        onClose={() => setKnowMoreOpen(false)}
-        user={{
-          name: data?.name ?? "",
-          username: data?.username ?? "",
-          role: data?.headline ?? "Developer",
-          bio: data?.userInfo ?? "",
-          email: data?.email ?? "",
-          location: "Los Angeles, California",
-          gender: "Male",
-          dob: "12 Dec 1994",
-          profileUrl: data?.profileUrl,
-          bannerUrl: data?.bannerUrl,
-          techStack: ["React", "Next.js", "Docker", "Java"],
-        }}
-      />
+        {/* Know more Modal  */}
+        <KnowMoreProfileModal
+          isOpen={knowMoreOpen}
+          onClose={() => setKnowMoreOpen(false)}
+          user={{
+            name: data?.name ?? "",
+            username: data?.username ?? "",
+            role: data?.headline ?? "Developer",
+            bio: data?.userInfo ?? "",
+            email: data?.email ?? "",
+            location: "Los Angeles, California",
+            gender: "Male",
+            dob: "12 Dec 1994",
+            profileUrl: data?.profileUrl,
+            bannerUrl: data?.bannerUrl,
+            techStack: ["React", "Next.js", "Docker", "Java"],
+          }}
+        />
 
-      {/* Edit links modal  */}
-      <EditLinksModal
-        isOpen={editLinksOpen}
-        onClose={() => setEditLinksOpen(false)}
-        initialValues={{
-          githubUrl: data?.githubUrl,
-          linkedinUrl: data?.linkedinUrl,
-          leetcodeUrl: data?.leetcodeUrl,
-          codeForcesUrl: data?.codeForcesUrl,
-          mediumUrl: data?.mediumUrl,
-          portfolioUrl: data?.portfolioUrl,
-        }}
-        onSave={(payload) => {
-          updatePlatformLinks(payload);
-          setEditLinksOpen(false);
-        }}
-      />
+        {/* Edit links modal  */}
+        <EditLinksModal
+          isOpen={editLinksOpen}
+          onClose={() => setEditLinksOpen(false)}
+          initialValues={{
+            githubUrl: data?.githubUrl,
+            linkedinUrl: data?.linkedinUrl,
+            leetcodeUrl: data?.leetcodeUrl,
+            codeForcesUrl: data?.codeForcesUrl,
+            mediumUrl: data?.mediumUrl,
+            portfolioUrl: data?.portfolioUrl,
+          }}
+          onSave={(payload) => {
+            updatePlatformLinks(payload);
+            setEditLinksOpen(false);
+          }}
+        />
       </div>
     </div>
   );

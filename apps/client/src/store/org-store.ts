@@ -1,7 +1,6 @@
-import { indexedDbStorage } from "@/utils/indexedDbStorage";
 import { Organization } from "@/utils/type";
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, createJSONStorage } from "zustand/middleware";
 
 interface OrganizationStore {
   info: Organization | null;
@@ -21,17 +20,21 @@ export const useOrgStore = create<OrganizationStore>()(
     }),
     {
       name: "org-storage",
-      storage: indexedDbStorage as any,
+      storage: createJSONStorage(() => localStorage),
+
       partialize: (state) => ({
         info: state.info,
       }),
+
       version: 1,
+
       migrate: (persistedState, version) => {
         if (version === 0) {
-          return persistedState;
+          return persistedState as OrganizationStore;
         }
-        return persistedState;
+        return persistedState as OrganizationStore;
       },
+
       onRehydrateStorage: () => (state) => {
         if (state) {
           state.hasHydrated = true;

@@ -1,7 +1,6 @@
-import { indexedDbStorage } from "@/utils/indexedDbStorage";
 import { User } from "@/utils/type";
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, createJSONStorage } from "zustand/middleware";
 
 interface UserStore {
   info: User | null;
@@ -25,7 +24,8 @@ export const useUserStore = create<UserStore>()(
     }),
     {
       name: "user-storage",
-      storage: indexedDbStorage as any,
+
+      storage: createJSONStorage(() => localStorage),
 
       partialize: (state) => ({
         info: state.info,
@@ -35,14 +35,14 @@ export const useUserStore = create<UserStore>()(
 
       migrate: (persistedState, version) => {
         if (version === 0) {
-          return persistedState;
+          return persistedState as UserStore;
         }
-        return persistedState;
+        return persistedState as UserStore;
       },
 
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
       },
-    }
-  )
+    },
+  ),
 );

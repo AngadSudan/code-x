@@ -234,6 +234,54 @@ class UserController {
       return res.status(200).json(apiResponse(500, error.message, null));
     }
   }
+  async getFullProfileBasedonUsername(req: Request, res: Response) {
+    try {
+      const userId = req.params.id;
+      if (!userId) throw new Error("User id is required");
+
+      const userData = await prismaClient.user.findFirst({
+        where: {
+          username: userId as string,
+        },
+        select: {
+          id: true,
+          name: true,
+          username: true,
+          email: true,
+          profileUrl: true,
+          bannerUrl: true,
+          headline: true,
+          userInfo: true,
+          resume: true,
+          githubUrl: true,
+          linkedinUrl: true,
+          leetcodeUrl: true,
+          codeForcesUrl: true,
+          mediumUrl: true,
+          portfolioUrl: true,
+          githubOAuth: true,
+          userExperiences: {
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+          developerGraphs: true,
+          projects: {
+            take: 3,
+          },
+        },
+      });
+
+      if (!userData) throw new Error("Unable to fetch user data");
+
+      return res
+        .status(200)
+        .json(apiResponse(200, "User data found", userData));
+    } catch (error: any) {
+      console.log(error);
+      return res.status(200).json(apiResponse(500, error.message, null));
+    }
+  }
   async addExperience(req: Request, res: Response) {
     try {
       const data = req.body as createExperience;
@@ -311,8 +359,8 @@ class UserController {
 
       const files = req.files as
         | {
-          [fieldname: string]: Express.Multer.File[];
-        }
+            [fieldname: string]: Express.Multer.File[];
+          }
         | undefined;
       const offerLetterFile = files?.offerLetter?.[0];
       const completionCertificateFile = files?.completionCertificate?.[0];
@@ -355,7 +403,7 @@ class UserController {
 
       const completionCertificateFromBody =
         typeof data.completionCertificate === "string" &&
-          data.completionCertificate.trim()
+        data.completionCertificate.trim()
           ? data.completionCertificate.trim()
           : undefined;
 
@@ -568,8 +616,9 @@ class UserController {
 
       const gitClient = new GithubService(dbUser.githubToken);
       const getAllRepos = await gitClient.getAllReposName();
+      console.log(getAllRepos.length);
       if (getAllRepos?.length === 0) throw new Error("no github data");
-
+      let tech: Set<string> = new Set();
       let repoPromises = [];
       for (let i = 0; i < getAllRepos?.length; i++) {
         const repo = getAllRepos[i];
@@ -577,10 +626,13 @@ class UserController {
           //@ts-ignore
           gitClient.getAllRepoTopicAndLang(repo?.name, repo?.owner),
         );
+
+        repo?.topics.map((topic: string) => {
+          tech.add(topic);
+        });
       }
 
       const repoData = await Promise.all(repoPromises);
-      let tech: Set<string> = new Set();
       for (let i = 0; i < repoData.length; i++) {
         const currentTags = repoData[i]?.tags;
         const currentLanguages = Object.keys(repoData[i]?.languages || {});
@@ -590,7 +642,6 @@ class UserController {
         currentLanguages.forEach((lang) => tech.add(lang));
       }
 
-      tech = new Set(tech);
       console.log(Array.from(tech));
 
       const response = await aiService.getClassification(Array.from(tech));
@@ -604,17 +655,26 @@ class UserController {
 
       const jsonData = parse(response);
 
-      processing.frontend =
-        Math.round((Number(jsonData.FRONTEND) || 0) / tech.size) * 100;
-      processing.backend =
-        Math.round((Number(jsonData.BACKEND) || 0) / tech.size) * 100;
-      processing.devops =
-        Math.round((Number(jsonData.DEVOPS) || 0) / tech.size) * 100;
-      processing.systemDesign =
-        Math.round((Number(jsonData.SYSTEM_DESIGN) || 0) / tech.size) * 100;
-      processing.tools =
-        Math.round((Number(jsonData.PROGRAMMING) || 0) / tech.size) * 100;
+      processing.frontend = Math.round(
+        ((Number(jsonData.FRONTEND?.length) || 0) / tech.size) * 100,
+      );
 
+      processing.backend = Math.round(
+        ((Number(jsonData.BACKEND?.length) || 0) / tech.size) * 100,
+      );
+
+      processing.devops = Math.round(
+        ((Number(jsonData.DEVOPS?.length) || 0) / tech.size) * 100,
+      );
+
+      processing.systemDesign = Math.round(
+        ((Number(jsonData.SYSTEM_DESIGN?.length) || 0) / tech.size) * 100,
+      );
+
+      processing.tools = Math.round(
+        ((Number(jsonData.PROGRAMMING?.length) || 0) / tech.size) * 100,
+      );
+      console.log(processing);
       const dbGraph = await prismaClient.developerGraph.findFirst({
         where: { userId: dbUser.id },
       });
@@ -634,7 +694,7 @@ class UserController {
       } else {
         data = await prismaClient.developerGraph.update({
           where: {
-            id: dbUser.id,
+            id: dbGraph.id,
           },
           data: {
             frontend:
@@ -658,6 +718,54 @@ class UserController {
     } catch (error: any) {
       console.log(error);
       return res.status(200).json(apiResponse(500, error.message, null));
+    }
+  }
+
+  async getGraph(req: Request, res: Response) {
+    try {
+      const userId = req.user?.id;
+      if (!userId) throw new Error("userId not found");
+      const dbUser = await prismaClient.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!dbUser) throw new Error("db user not found");
+      if (!dbUser.githubToken)
+        throw new Error("pleases Connect with github first");
+
+      const dbGraph = await prismaClient.developerGraph.findFirst({
+        where: { userId: dbUser.id },
+      });
+
+      if (!dbGraph) {
+        return res.status(200).json(
+          apiResponse(200, "graph fetched", {
+            isConnected: true,
+            graphPoints: [0, 0, 0, 0, 0],
+          }),
+        );
+      }
+
+      return res.status(200).json(
+        apiResponse(200, "graph fetched", {
+          isConnected: true,
+          graphPoints: [
+            dbGraph.systemDesign,
+            dbGraph.backend,
+            dbGraph.frontend,
+            dbGraph.tools,
+            dbGraph.devops,
+          ],
+        }),
+      );
+    } catch (error: any) {
+      console.log(error);
+      return res.status(200).json(
+        apiResponse(200, error.message, {
+          isConnected: false,
+          graphPoints: [0, 0, 0, 0, 0],
+        }),
+      );
     }
   }
 }

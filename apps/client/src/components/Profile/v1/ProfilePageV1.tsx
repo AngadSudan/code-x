@@ -1,8 +1,11 @@
+"use client";
 import { useColors } from "@/components/General/(Color Manager)/useColors";
 import BottomSection from "./BottomSection";
 import SideSection from "./SideSection";
 import TopSection from "./TopSection";
 import { WebsiteNavbar } from "@/components/General/WebsiteNavbar";
+import { useEffect, useState } from "react";
+import axiosInstance from "@/utils/axiosInstance";
 
 const sizes = {
   large: 4,
@@ -13,6 +16,23 @@ const sizes = {
 export default function ProfilePageV1() {
   const Colors = useColors();
 
+  const [data, setData] = useState(null);
+  const fetchData = async () => {
+    try {
+      const res = await axiosInstance.get("/api/v1/users/get-profile");
+      if (!res) throw new Error("Unable to get Data");
+
+      const result = res.data;
+      console.log(result.data);
+      setData(result.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
   return (
     <div
       className={`
@@ -47,7 +67,8 @@ export default function ProfilePageV1() {
         `}
       >
         <TopSection />
-        <BottomSection />
+
+        <BottomSection gitUrl={data ? data.githubUrl : ""} />
       </div>
     </div>
   );

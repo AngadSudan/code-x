@@ -1,7 +1,6 @@
 import { Interviewer } from "@/utils/type";
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
-import { indexedDbStorage } from "@/utils/indexedDbStorage";
+import { persist, createJSONStorage } from "zustand/middleware";
 
 type InterviewerStore = {
   info: Interviewer | null;
@@ -20,17 +19,21 @@ export const useInterviewer = create<InterviewerStore>()(
     }),
     {
       name: "interview-storage",
-      storage: indexedDbStorage as any,
+      storage: createJSONStorage(() => localStorage),
+
       partialize: (state) => ({
         info: state.info,
       }),
+
       version: 1,
+
       migrate: (persistedState, version): InterviewerStore => {
         if (version === 0) {
           return persistedState as InterviewerStore;
         }
         return persistedState as InterviewerStore;
       },
+
       onRehydrateStorage: () => (state) => {
         if (state) {
           state.hasHydrated = true;

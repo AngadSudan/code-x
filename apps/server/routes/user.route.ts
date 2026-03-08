@@ -14,36 +14,42 @@ userRouter.put(
   "/upload-resume",
   authMiddleware,
   upload.single("resume"),
-  UserController.handleResumeUpload
+  UserController.handleResumeUpload,
 );
 
 userRouter.put(
   "/delete-resume",
   authMiddleware,
   upload.single("resume"),
-  UserController.deleteExperience
+  UserController.deleteExperience,
 );
-
 
 userRouter.put(
   "/update-ProfilePic",
   authMiddleware,
   upload.single("profilePic"),
-  UserController.handleProfilePicUpdate
+  UserController.handleProfilePicUpdate,
 );
 
 userRouter.put(
   "/update-banner",
   authMiddleware,
   upload.single("Banner"),
-  UserController.handleProfileBannerUpdate
+  UserController.handleProfileBannerUpdate,
 );
 
-userRouter.get("/get-profile", 
-  authMiddleware, 
-  UserController.getFullProfile
+userRouter.get("/get-profile", authMiddleware, UserController.getFullProfile);
+userRouter.get(
+  "/profile/:id",
+  authMiddleware,
+  UserController.getFullProfileBasedonUsername,
 );
-
+userRouter.get("/git-graph", authMiddleware, UserController.getGraph);
+userRouter.get(
+  "/recalculate-git-graph",
+  authMiddleware,
+  UserController.getGithubDashboardInsights,
+);
 userRouter.post(
   "/add-experience",
   authMiddleware,
@@ -70,7 +76,7 @@ userRouter.delete(
 userRouter.put(
   "/update-platform-links",
   authMiddleware,
-  UserController.updateUserPlatformLinks
+  UserController.updateUserPlatformLinks,
 );
 
 export default userRouter;
